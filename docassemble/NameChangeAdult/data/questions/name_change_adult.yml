@@ -15,6 +15,7 @@ objects:
   - users: ALPeopleList.using(there_are_any=True)
   - users[i].new: ALIndividual
   - divorce_location: ALAddress
+  - users[i].convictions: DAList.using(object_type=Thing, there_are_any=True)
   - other_parties: ALPeopleList.using(there_are_any=True)
   - other_parties[i].lawyer: ALIndividual
   - witness: ALIndividual
@@ -34,6 +35,7 @@ code: |
   github_user = 'IllinoisLegalAidOnline'
   github_repo_name = 'docassemble-NameChangeAdult'
   allowed_courts = ['Circuit']
+  interview_type = 'adult'
 ---
 # Road map
 sections:
@@ -78,6 +80,9 @@ code: |
   users[0].felonies
   users[0].registry
   users[0].id_theft
+  if users[0].felonies or users[0].registry or users[0].id_theft:
+    user_conviction_intro
+  	users[0].convictions.gather()  
 
   set_progress(50)
   nav.set_section('section_spouse')
@@ -93,6 +98,15 @@ code: |
   
     users[1].name.first
     users[1].new.name.first
+
+    # do we need this again? with modified language? criminal_history_intro
+    users[1].pending_arrests
+    users[1].pending_charges
+    users[1].misdemeanors
+    users[1].felonies
+    users[1].registry
+    users[1].id_theft
+
 
   
   set_progress(75)
@@ -322,59 +336,113 @@ continue button field: criminal_history_intro
 question: |
   Criminal history
 subquestion: |
-  To request a name change in Illinois, you have to tell the court about any criminal history you may have.
+  To request a name change in Illinois, a person needs to tell the court about any criminal history they may have.
 
   TO DO: Add more information
 ---
 id: pending arrests
+generic object: ALPeopleList
 question: |
+  % if interview_type == 'adult':
+  % if i == 0:
   Do you have any arrests for which charges have not been filed?
+  % else:
+  Does your spouse have any arrests for which charges have not been filed?
+  % endif
+  % else:
+  Does [child identifier] have any arrests for which charges have not been filed?
+  % endif
 subquestion: |
   ADD INFO
 fields:
-  - no label: users[0].pending_arrests
+  - no label: x[i].pending_arrests
     datatype: yesnoradio
+
 ---
 id: pending charges
+generic object: ALPeopleList
 question: |
+  % if interview_type == 'adult':
+  % if i == 0:
   Do you have any pending misdemeanor or felony charges?
+  % else:
+  Do your spouse have any pending misdemeanor or felony charges?
+  % endif
+  % else:
+  Does [child identifier] have any pending misdemeanor or felony charges?
+  % endif
 subquestion: |
+  % if interview_type == 'adult':
+  % if i == 0:
   In other words, do you have any ongoing criminal cases against you for misdemeanor or felony offenses?
+  % else:
+    In other words, does your spouse have any ongoing criminal cases against them for misdemeanor or felony offenses?
+  % endif
+  % else:
+    In other words, does [child identifier] have any ongoing criminal cases against them for misdemeanor or felony offenses?
+  % endif
 fields:
-  - no label: users[0].pending_charges
+  - no label: x[i].pending_charges
     datatype: yesnoradio
 ---
 id: misdemeanors
+generic object: ALPeopleList
 question: |
+  % if interview_type == 'adult':
+  % if i == 0:
   Do you have any convictions or were you placed on probation for any misdemeanors?
+  % else:
+  Does your spouse have any convictions or were they placed on probation for any misdemeanors?
+  % endif
+  % else:
+  Does [child identifier] have any convictions or were they placed on probation for any misdemeanors?
+  % endif
 subquestion: |
   These can be misdemeanors in Illinois or any other state.
 fields:
-  - no label: users[0].misdemeanors
+  - no label: x[i].misdemeanors
     datatype: yesnoradio
-  - Were you pardoned for all of these misdemeanors?: users[0].misdemeanor_pardon
+  - Were all of these misdemeanors pardoned?: x[i].misdemeanor_pardon
     datatype: yesnoradio
     show if:
-      variable: users[0].misdemeanors
+      variable: x[i].misdemeanors
       is: True
 ---
 id: felonies
+generic object: ALPeopleList
 question: |
+  % if interview_type == 'adult':
+  % if i == 0:
   Do you have any convictions or were you placed on probation for any felonies?
+  % else:
+  Does your spouse have any convictions or were they placed on probation for any felonies?
+  % endif
+  % else:
+  Does [child identifier] have any convictions or were they placed on probation for any felonies?
+  % endif
 subquestion: |
   These can be felonies in Illinois or any other state.
 fields:
-  - no label: users[0].felonies
+  - no label: x[i].felonies
     datatype: yesnoradio
-  - Were you pardoned for all of these felonies?: users[0].felony_pardon
+  - Were all of these felonies pardoned?: x[i].felony_pardon
     datatype: yesnoradio
     show if:
-      variable: users[0].felonies
+      variable: x[i].felonies
       is: True
 ---
 id: registries
+generic object: ALPeopleList
 question: |
+  % if interview_type == 'adult':
+  % if i == 0:
   Do you have any convictions or were you placed on probation for a crime that required you register?
+  % else:
+  Do your spouse have any convictions or were they placed on probation for a crime that required them register?
+  % endif
+  % else:
+  Do [child identifier] have any convictions or were they placed on probation for a crime that required them register?
+  % endif
 subquestion: |
   These include crimes that require registration under the:
   
@@ -382,7 +450,15 @@ subquestion: |
   * Murderer and Violent Offender Against Youth Act, or
   * Arsonist Registration Act.
 
+  % if interview_type == 'adult':
+  % if i == 0:
   **Important**: If you have been placed on any of these registries and have not been pardoned, **it is a felony to file a petition to change your name** unless one of these exceptions apply:
+  % else:
+  **Important**: If they have been placed on any of these registries and have not been pardoned, **it is a felony to file a petition to change your name** unless one of these exceptions apply:
+  % endif
+  % else:
+  **Important**: If they have been placed on any of these registries and have not been pardoned, **it is a felony to file a petition to change your name** unless one of these exceptions apply:
+  % endif
   
   * Marriage
   * Religious beliefs
@@ -391,9 +467,9 @@ subquestion: |
 
   These can be Illinois registries or similar registries in any other state.
 fields:
-  - no label: users[0].registry
+  - no label: x[i].registry
     datatype: yesnoradio
-  - Which of these exceptions apply?: users[0].registry_exceptions
+  - Which of these exceptions apply?: x[i].registry_exceptions
     datatype: checkboxes
     choices:
       - Marriage: Marriage 
@@ -401,7 +477,7 @@ fields:
       - Status as a victim of trafficking: Status as a victim of trafficking
       - Gender-related identity: Gender-related identity
     show if:
-      variable: users[0].registry
+      variable: x[i].registry
       is: True
 ---
 terms:
@@ -409,22 +485,118 @@ terms:
       The Illinois Human Rights Act states that gender-identity does not need to be the same as the  sex designated at birth.
 ---
 id: id theft
+generic object: ALPeopleList
 question: |
+  % if interview_type == 'adult':
+  % if i == 0:
   Do you have any convictions or were you placed on probation for identity theft?
+  % else:
+  Do your spouse have any convictions or were they placed on probation for identity theft?
+  % endif
+  % else:
+  Does [child identifier] have any convictions or were they placed on probation for identity theft?
+  % endif
 subquestion: |
   This includes **identity theft** or **aggravated identity theft**.
   
   These can be in Illinois or any other state.
-  
+
+  % if interview_type == 'adult':
+  % if i == 0:
   You can still request a name change even if you answer **Yes**.
+  % else:
+  Your spouse can still request a name change even if you answer **Yes**.
+  % endif
+  % else:
+  You can still request a name change for [child identifier] even if you answer **Yes**.
+  % endif
 fields:
-  - no label: users[0].id_theft
+  - no label: x[i].id_theft
+    datatype: yesnoradio
+---
+terms:
+  - "Offenses requiring registration": |
+      These include crimes that require registration under the:
+  
+       * Sex Offender Registration Act
+       * Murderer and Violent Offender Against Youth Act, or
+       * Arsonist Registration Act.
+---
+id: user conviction intro
+continue button field: user_conviction_intro
+question: |
+  Criminal history details
+subquestion: |
+  For these convictions or probations, you must enter more information on your name change request:
+  
+  % if users[0].felonies:
+   * Felony convictions or probations
+  % endif
+  % if users[0].registry:
+   * **{Offenses requiring registration}**
+  % endif
+  % if users[0].id_theft:
+   * Identification theft or Aggravated identity theft
+  % endif
+---
+id: conviction details
+question: |
+  % if i == 0:
+  Conviction details
+  % else:
+  More conviction details
+  % endif
+subquestion: |
+  For any of the following convictions or probations, you must enter more information on your name change request:
+  
+  % if users[0].felonies:
+   * Felony convictions or probations
+  % endif
+  % if users[0].registry:
+   * **{Offenses requiring registration}**
+  % endif
+  % if users[0].id_theft:
+   * Identification theft or Aggravated identity theft
+  % endif
+fields:
+  - Offense description: users[0].convictions[i].name.text
+    maxlength: 30
+  - Date of conviction or probation: users[0].convictions[i].date
+    datatype: date
+    max: ${ today().format("yyyy-MM-dd") }
+  - Sentence received: users[0].convictions[i].sentence
+    maxlength: 30
+  - Date sentence completed: users[0].convictions[i].completed_date
+    datatype: date
+    max: ${ today().format("yyyy-MM-dd") }
+  - Pardoned?: users[0].convictions[i].pardoned
     datatype: yesnoradio
 
-
-
-
-
+---
+id: any other convictions
+question: |
+  Are there other convictions?
+subquestion: |
+  For these convictions or probations, you must enter more information on your name change request:
+  
+  % if users[0].felonies:
+   * Felony convictions or probations
+  % endif
+  % if users[0].registry:
+   * **{Offenses requiring registration}**
+  % endif
+  % if users[0].id_theft:
+   * Identification theft or Aggravated identity theft
+  % endif
+  
+  So far you have told us about:
+  
+  % for conviction in users[0].convictions:
+   * ${conviction.name.text} on ${conviction.date}
+  % endfor
+fields:
+  - "Add another conviction or probation?": users[0].convictions.there_is_another
+    datatype: yesnoradio
 
 
   
