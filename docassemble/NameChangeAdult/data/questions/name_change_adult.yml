@@ -111,7 +111,17 @@ code: |
   
   set_progress(75)
   nav.set_section('section_notice')
-
+  notice_intro
+  if users[0].after_divorce == False or change_spouse_name == "Yes": # publication may be required
+    if request_waiver == True:
+      if waiver_reason.all_false():
+        no_waiver_grounds
+      else:
+        if waiver_reason['order'] == True:
+          whats_next  # replace this with which order question
+        hardship_text
+     
+      #need to set logic and questions here so that publication info is asked (if known). These should be asked if no_waiver_grounds OR not divorce
   
   set_progress(90)
   nav.set_section('section_filing_details')
@@ -119,13 +129,16 @@ code: |
   users[0].phone_number
   if users[0].email_notice == True:
     users[0].email
-
+  if change_spouse_name == "Yes":
+    users[1].address.address
+    users[1].phone_number
+    if users[1].email_notice == True:
+      users[1].email
 
 
   set_progress(100)
   nav.set_section('section_download')
-
-
+  download_placeholder
 ---
 id: birthdate
 question: |
@@ -344,11 +357,11 @@ id: pending arrests
 generic object: ALPeopleList
 question: |
   % if interview_type == 'adult':
-  % if i == 0:
-  Do you have any arrests for which charges have not been filed?
-  % else:
-  Does your spouse have any arrests for which charges have not been filed?
-  % endif
+    % if i == 0:
+    Do you have any arrests for which charges have not been filed?
+    % else:
+    Does your spouse have any arrests for which charges have not been filed?
+    % endif
   % else:
   Does [child identifier] have any arrests for which charges have not been filed?
   % endif
@@ -363,21 +376,21 @@ id: pending charges
 generic object: ALPeopleList
 question: |
   % if interview_type == 'adult':
-  % if i == 0:
-  Do you have any pending misdemeanor or felony charges?
-  % else:
-  Do your spouse have any pending misdemeanor or felony charges?
-  % endif
+    % if i == 0:
+    Do you have any pending misdemeanor or felony charges?
+    % else:
+    Do your spouse have any pending misdemeanor or felony charges?
+    % endif
   % else:
   Does [child identifier] have any pending misdemeanor or felony charges?
   % endif
 subquestion: |
   % if interview_type == 'adult':
-  % if i == 0:
-  In other words, do you have any ongoing criminal cases against you for misdemeanor or felony offenses?
-  % else:
+    % if i == 0:
+    In other words, do you have any ongoing criminal cases against you for misdemeanor or felony offenses?
+    % else:
     In other words, does your spouse have any ongoing criminal cases against them for misdemeanor or felony offenses?
-  % endif
+    % endif
   % else:
     In other words, does [child identifier] have any ongoing criminal cases against them for misdemeanor or felony offenses?
   % endif
@@ -389,11 +402,11 @@ id: misdemeanors
 generic object: ALPeopleList
 question: |
   % if interview_type == 'adult':
-  % if i == 0:
-  Do you have any convictions or were you placed on probation for any misdemeanors?
-  % else:
-  Does your spouse have any convictions or were they placed on probation for any misdemeanors?
-  % endif
+    % if i == 0:
+    Do you have any convictions or were you placed on probation for any misdemeanors?
+    % else:
+    Does your spouse have any convictions or were they placed on probation for any misdemeanors?
+    % endif
   % else:
   Does [child identifier] have any convictions or were they placed on probation for any misdemeanors?
   % endif
@@ -412,11 +425,11 @@ id: felonies
 generic object: ALPeopleList
 question: |
   % if interview_type == 'adult':
-  % if i == 0:
-  Do you have any convictions or were you placed on probation for any felonies?
-  % else:
-  Does your spouse have any convictions or were they placed on probation for any felonies?
-  % endif
+    % if i == 0:
+    Do you have any convictions or were you placed on probation for any felonies?
+    % else:
+    Does your spouse have any convictions or were they placed on probation for any felonies?
+    % endif
   % else:
   Does [child identifier] have any convictions or were they placed on probation for any felonies?
   % endif
@@ -435,11 +448,11 @@ id: registries
 generic object: ALPeopleList
 question: |
   % if interview_type == 'adult':
-  % if i == 0:
-  Do you have any convictions or were you placed on probation for a crime that required you register?
-  % else:
-  Do your spouse have any convictions or were they placed on probation for a crime that required them register?
-  % endif
+    % if i == 0:
+    Do you have any convictions or were you placed on probation for a crime that required you register?
+    % else:
+    Do your spouse have any convictions or were they placed on probation for a crime that required them register?
+    % endif
   % else:
   Do [child identifier] have any convictions or were they placed on probation for a crime that required them register?
   % endif
@@ -451,11 +464,11 @@ subquestion: |
   * Arsonist Registration Act.
 
   % if interview_type == 'adult':
-  % if i == 0:
-  **Important**: If you have been placed on any of these registries and have not been pardoned, **it is a felony to file a petition to change your name** unless one of these exceptions apply:
-  % else:
-  **Important**: If they have been placed on any of these registries and have not been pardoned, **it is a felony to file a petition to change your name** unless one of these exceptions apply:
-  % endif
+    % if i == 0:
+    **Important**: If you have been placed on any of these registries and have not been pardoned, **it is a felony to file a petition to change your name** unless one of these exceptions apply:
+    % else:
+    **Important**: If they have been placed on any of these registries and have not been pardoned, **it is a felony to file a petition to change your name** unless one of these exceptions apply:
+    % endif
   % else:
   **Important**: If they have been placed on any of these registries and have not been pardoned, **it is a felony to file a petition to change your name** unless one of these exceptions apply:
   % endif
@@ -488,11 +501,11 @@ id: id theft
 generic object: ALPeopleList
 question: |
   % if interview_type == 'adult':
-  % if i == 0:
-  Do you have any convictions or were you placed on probation for identity theft?
-  % else:
-  Do your spouse have any convictions or were they placed on probation for identity theft?
-  % endif
+    % if i == 0:
+    Do you have any convictions or were you placed on probation for identity theft?
+    % else:
+    Do your spouse have any convictions or were they placed on probation for identity theft?
+    % endif
   % else:
   Does [child identifier] have any convictions or were they placed on probation for identity theft?
   % endif
@@ -502,11 +515,11 @@ subquestion: |
   These can be in Illinois or any other state.
 
   % if interview_type == 'adult':
-  % if i == 0:
-  You can still request a name change even if you answer **Yes**.
-  % else:
-  Your spouse can still request a name change even if you answer **Yes**.
-  % endif
+    % if i == 0:
+    You can still request a name change even if you answer **Yes**.
+    % else:
+    Your spouse can still request a name change even if you answer **Yes**.
+    % endif
   % else:
   You can still request a name change for [child identifier] even if you answer **Yes**.
   % endif
@@ -599,7 +612,97 @@ fields:
     datatype: yesnoradio
 
 
+
+---
+id: notice intro
+continue button field: notice_intro
+question: |
+  Notice and publication
+subquestion: |
+  Name changes in Illinois usually require publishing a notice in the newspaper to let others know.
   
+  The publication can be skipped if:
+  
+   * The person requesting a name change is worried about their health or safety, or
+   * The person requesting a changing their name was recently divorced and has not yet changed their name.
+
+  TO DO: Add more information, especially minor child variants.
+---
+id: request waiver
+question: |
+  Are you worried that publishing your name change request in the newspaper would be a hardship?
+subquestion: |
+  TO DO - add info, adjust for spouse & kids
+fields:
+  - no label: request_waiver
+    datatype: radio
+    choices:
+      - Yes, I want to ask the court to waive publication.: True
+      - No, I am okay with newspaper publication.: False
+---
+id: publication waiver reasons
+question: |
+  Why do you need a waiver?
+subquestion: |
+  You may need a waiver if you have or did have protection from a court order. You may also need a waiver if publication would be a hardship for the person whose name would be changed.
+  
+  A hardship can be fear of:
+  
+  * Physical violence,
+  * Discrimination,
+  * Harassment,
+  * Bullying, or
+  * Threats of violence.
+fields:
+  - no label: waiver_reason
+    datatype: checkboxes
+    choices:
+      - I have or did have protection from a court order.: order
+      - I need a waiver of notice and publication of name change because it would be a hardship for the person who is changing their name.: hardship
+
+
+
+---
+id: hardship text
+question: |
+  Explain hardship
+fields:
+  - Notice and publication would be a hardship because: hardship_text
+    input type: area
+    rows: 10
+    maxlength: 1000
+
+---
+id: no waiver grounds
+continue button field: no_waiver_grounds
+question: |
+  Need a reason for notice and publication waiver
+subquestion: |
+  You did not select a reason for why you need to waive the notice and publication requirement of the name change.
+  
+  Click **Back** if you want to change your answers. Otherwise, click **Next** to continue.
+
+  TO DO: Add more information, especially minor child variants.
+
+
+
+
+
+
+
+
+---
+id: download placeholder
+event: download_placeholder
+question: |
+  Download
+
+
+
+
+
+
+
 ---
 code: |  
   if existing_case == False:
@@ -1720,17 +1823,7 @@ content: |
   See **[Illinois Supreme Court Rule 137](https://www.illinoiscourts.gov/supreme-court-rules)** for more information.
   % endif  
   
----
-id: notice intro
-continue button field: notice_intro
-question: |
-  Tell all other parties in your case about your motion
-subquestion: |
-  These are the other parties in this case: ${comma_and_list(delivery_parties)}.
 
-  You must tell them about your motion and when you will present it to the judge.
-
-  If someone in the case has a lawyer, you must tell their lawyer.
 
 ---
 depends on:
