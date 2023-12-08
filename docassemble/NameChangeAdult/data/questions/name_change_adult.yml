@@ -74,7 +74,7 @@ code: |
   if users[0].after_divorce == True:
     divorce_location.state
 
-  criminal_history_intro
+  users[0].criminal_history_intro
   users[0].pending_arrests
   users[0].pending_charges
   users[0].misdemeanors
@@ -102,7 +102,7 @@ code: |
     users[1].name.first
     users[1].new.name.first
 
-    # criminal_history_intro  do we need this again? with modified language? 
+    users[1].criminal_history_intro 
     users[1].pending_arrests
     users[1].pending_charges
     users[1].misdemeanors
@@ -114,37 +114,49 @@ code: |
     if users[1].felonies or users[1].registry or users[1].id_theft:
       user_conviction_intro
   	  users[1].convictions.gather()  
-
-
   
   set_progress(75)
   nav.set_section('section_notice')
   notice_intro
   if users[0].after_divorce == False or change_spouse_name == "Yes": # publication may be required
     if request_waiver == True:
-      if waiver_reason.all_false():
-        no_waiver_grounds
-      else:
-        if waiver_reason['order'] == True:
-          if protective_order.any_true():
-            orders.gather()
+      if waiver_reason['order'] == True:
+        if protective_order.any_true():
+          orders.gather()
+      hardship_text
 
-        hardship_text
-     
-      #need to set logic and questions here so that publication info is asked (if known). These should be asked if no_waiver_grounds OR not divorce
-  
+  if users[0].after_divorce == False:
+    if request_waiver == False:
+      publication_intro
+      publication_placeholder
+    #elif waiver_reason.all_false():
+    #  publication_intro
+    #  publication_placeholder
+
+
+  # IF PUBLICATION do we want to ask if they already have hearing information from court clerk? date, time, in person (courtroom) or remote (phone, website, log-in information). 
+  # do you know this now?
+  # in person or remote?
+  # court hearing date, time, courtroom
+  # if remote - phone, website, login info
+
   set_progress(90)
   nav.set_section('section_filing_details')
+  if trial_court_index == -1:
+    cook_district
+  courthouse_info
+  hide_address
   users[0].address.address
   users[0].phone_number
   if users[0].email_notice == True:
     users[0].email
+  e_signature
   if change_spouse_name == "Yes":
     users[1].address.address
     users[1].phone_number
     if users[1].email_notice == True:
       users[1].email
-
+    e_signature_spouse
 
   set_progress(100)
   nav.set_section('section_download')
@@ -355,11 +367,20 @@ fields:
 
 ---
 id: criminal history intro
-continue button field: criminal_history_intro
+generic object: ALPeopleList
+continue button field: x[i].criminal_history_intro
 question: |
   Criminal history
 subquestion: |
-  To request a name change in Illinois, a person needs to tell the court about any criminal history they may have.
+  % if interview_type == 'adult':
+    % if i == 0:
+    To request a name change in Illinois, you need to tell the court about any criminal history you may have.
+    % else:
+    To request a name change in Illinois, your spouse needs to tell the court about any criminal history they may have.
+    % endif
+  % else:
+    To request a name change in Illinois, your [child identifier] needs to tell the court about any criminal history they may have.
+  % endif
 
   TO DO: Add more information
 ---
@@ -677,7 +698,7 @@ question: |
 subquestion: |
   You may need a waiver if you have or did have protection from a court order. You may also need a waiver if publication would be a hardship for the person whose name would be changed.
   
-  A hardship can be fear of:
+  A hardship can be many things. It can include fear of:
   
   * Physical violence,
   * Discrimination,
@@ -687,9 +708,13 @@ subquestion: |
 fields:
   - no label: waiver_reason
     datatype: checkboxes
+    minlength: 1
     choices:
       - I have or did have protection from a court order.: order
       - I need a waiver of notice and publication of name change because it would be a hardship for the person who is changing their name.: hardship
+    validation messages:
+      minlength: |
+        Please select at least one or click < Back if none apply.
 ---
 id: protective order type
 question: |
@@ -721,13 +746,17 @@ fields:
 ---
 id: hardship text
 question: |
-  Explain hardship
+  Explain why notice and publication would be a hardship (optional)
+subquestion: |  
+  There can be other reasons why notice and publication may be a hardship. For example, paying newspaper publication fees.
+  
+  This is optional. Your answers so far are enough for a judge to grant your request to waive notice an publication. They will go into your forms. Sometimes it is helpful to explain your hardship in your own words.
 fields:
-  - Notice and publication would be a hardship because: hardship_text
+  - Notice and publication would be a hardship because (optional):: hardship_text
     input type: area
     rows: 10
     maxlength: 1000
-
+    required: False
 ---
 id: no waiver grounds
 continue button field: no_waiver_grounds
@@ -749,7 +778,7 @@ question: |
   More protective order case details
   % endif
 subquestion: |
-  For any of the following, enter more information to your **Motion to Waive Notice and Publication**:
+  For any of the following, enter more information to your *Motion to Waive Notice and Publication*:
   
   % if protective_order['op']:
    * An Order of Protection
@@ -821,6 +850,81 @@ code: |
   if orders.number_gathered() >= 4:
     orders.there_is_another = False
 ---
+id: publication intro
+continue button field: publication_intro
+question: |
+  Information about publication
+subquestion: |
+  At the end of this program, you can download a *Publication Notice of Court Date for Request for Name Change*. 
+  
+  You will have to publish this in a newspaper in the county where you live once a week for 3 weeks in a row. There may be a publication fee to put your notice in the newspaper.
+  
+  Your notice must have details about when your name change request will be in court. This includes a hearing date that the court clerk will give you. When you get the hearing date, ask for a date 6-8 weeks in the future to make sure you have plenty of time to set up the newspaper publication.
+  
+  You can learn more from the "How to Change Your Name" instructions you can download at the end of this program.
+---
+id: publication placeholder
+continue button field: publication_placeholder
+question: |
+  Publication placeholder
+subquestion: |
+  TO DO: Do we ask for any information about the court hearing now, or should we just explain what info will need to be added to the Publication notice later?
+
+---
+id: hide address
+question: |
+  Do you want to keep your address hidden?
+subquestion: |
+  You do not need to list your address on your court papers if this would put you or your household at risk.
+  
+  You can use an address where you can receive court notices instead.
+field: hide_address
+choices:
+  - Yes: True
+  - No: False
+---
+id: get address
+question: |
+  % if hide_address:
+  What is your mailing address?
+  % else:
+  What is your home address?
+  % endif
+subquestion: |
+  % if hide_address:
+  **This address will appear on your court papers.** You may receive court notices and documents about your case at this address.
+  % else:
+  **This address will appear on your court papers.** If you do not want this, click **Back** to keep your address hidden.
+  % endif
+fields:
+  - Street address: users[0].address.address
+    address autocomplete: True
+  - Address line 2: users[0].address.unit
+    required: False
+  - City: users[0].address.city
+  - State: users[0].address.state
+    code: |
+      states_list()
+    default: IL      
+  - ZIP code: users[0].address.zip
+---
+id: get spouse address
+question: |
+  What is your spouse's address?
+subquestion: |
+fields:
+  - Street address: users[1].address.address
+    address autocomplete: True
+  - Address line 2: users[1].address.unit
+    required: False
+  - City: users[1].address.city
+  - State: users[1].address.state
+    code: |
+      states_list()
+    default: IL      
+  - ZIP code: users[1].address.zip
+
+
 
 
 
@@ -837,6 +941,11 @@ id: download placeholder
 event: download_placeholder
 question: |
   Download
+
+
+
+
+
 
 
 
@@ -1170,40 +1279,6 @@ subquestion: |
 fields:
   - "Anyone else?": other_parties.there_is_another
     datatype: yesnoradio
----
-# modified other opposing parties question
-# add to basic questions
-#id: any other opposing parties
-#question: |
-#  % if users==plaintiffs:
-#  Is there another **defendant** or **respondent** in this case?
-#  % else:
-#  Is there another **plaintiff** or **petitioner** in this case?
-#  % endif
-#subquestion: |
-#  % if len(other_parties.elements) >= 1:  
-#  So far you have told us about ${comma_and_list(other_parties.complete_elements().full_names())}.
-#  % endif
-#fields:
-#  - "Anyone else?": other_parties.there_is_another
-#    datatype: yesnoradio
-#---
-#depends on:
-#  - user_started_case
-#sets:
-#  - other_parties[i].name.first
-#id: names of opposing parties
-#question: |
-#  % if users==plaintiffs:
-#  Name of ${ ordinal(i) } **defendant** or **respondent** in this case
-#  % else:
-#  Name of ${ ordinal(i) } **plaintiff** or **petitioner** in this case
-#  % endif
-#subquestion: |
-#  ${ collapse_template(long_name_help) }
-#fields:
-#  - code: |
-#      other_parties[i].name_fields(person_or_business='unsure')
 ---
 id: trial court county
 continue button field: case_county
@@ -1687,33 +1762,6 @@ fields:
     rows: 5
     maxlength: 340
 ---
-#id: reschedule date
-#question: |
-#  % if continue_reason_type == "Witness unavailable":
-#  When will ${ witness.name.full(middle="full") } be available to testify?
-#  % else:
-#  When will you be able to bring the evidence to court?
-#  % endif
-#subquestion: |
-#  % if continue_reason_type == "Witness unavailable":
-#  Enter a date when ${ witness.name.full(middle="full") } will be available.
-#  % else:
-#  Enter a date when the evidence (${ evidence_description }) will be available.
-#  % endif
-#fields:
-#  - Date witness available: available_date
-#    datatype: date
-#    min: ${ reschedule_date.format("yyyy-MM-dd") }
-#    show if: 
-#      code: |
-#        continue_reason_type == "Witness unavailable"
-#  - Date evidence available: available_date
-#    datatype: date
-#    min: ${ reschedule_date.format("yyyy-MM-dd") }
-#    show if:
-#      code: |
-#        continue_reason_type == "Evidence unavailable"
----
 id: evidence summary
 question: |
   % if continue_reason_type == "Witness unavailable":
@@ -1776,42 +1824,6 @@ fields:
     rows: 3
     maxlength: 210
 ---
-# removed sep 2023 after aoic made statewide form to cover missing evidence or witness
-#depends on:
-#  - continue_reason_type
-#  - witness.name
-#  - know_witness_address
-#  - used_due_diligence
-#  - due_diligence_effort
-#  - avaialable_date
-#  - witness_testimony
-#sets:
-#  - continue_reason
-#  - continue_reason_string_built
-#code: |
-#  if continue_reason_type == "Other":
-#    continue_reason = continue_reason_text
-#    continue_reason_string_built = True    
-#  else:
-#    if continue_reason_type == "Witness unavailable":
-#      temp_continue_reason = "1. The evidence is witness testimony from " + str(witness.name.full(middle='full')) + ".\n"
-#    
-#      if know_witness_address:
-#        temp_continue_reason += "2. I have used due diligence to get " + str(witness.name.full(middle='full')) + " to testify on " + reschedule_date + ". Specifically, I have: " + due_diligence_effort.rstrip('.') + ".\n3. The evidence will show the following: " + witness_testimony.rstrip('.') + ".\n4. The witness, " + str(witness.name.full(middle='full')) + ", resides at " + str(witness.address.on_one_line(bare=True)) + ".\n5. "
-#      else:
-#        temp_continue_reason += "2. The witness's address is unknown. I have used due diligence to find where " + str(witness.name.full(middle='full')) + " lives. Specifically, I have done the following: " + due_diligence_effort.rstrip('.') + ".\n3. The evidence will show the following: " + witness_testimony.rstrip('.') + ".\n4. "
-#  
-#      temp_continue_reason += "If I am given more time, I can get the witness by " + available_date + "."
-#      
-#    else:
-#      temp_continue_reason = "1. The evidence is: " + evidence_description.rstrip('.') + ".\n"
-#      temp_continue_reason += "2. I have used due diligence to get " + evidence_description.rstrip('.') + " to court on " + reschedule_date + ". Specifically, I have: " + due_diligence_effort.rstrip('.') + ".\n3. The evidence will show the following: " + evidence_shows.rstrip('.')
-#      temp_continue_reason += ".\n4. If I am given more time, I can get " + evidence_description.rstrip('.') + " by " + available_date + "."
-#  
-#    continue_reason = "Evidence material to my case is not available on " + reschedule_date + ". Therefore, I ask the court for more time to get it.\n" + str(temp_continue_reason)
-#    continue_reason_string_built = True
-#reconsider: True
----  
 id: unfinished task
 question: |
   What do you need more time to do?
@@ -1880,47 +1892,71 @@ subquestion: |
   % endif  
 ---
 id: phone number
+generic object: ALPeopleList
 question: |
+  % if i == 0:
   What is your phone number?
+  % else:
+  What is your spouse's phone number?
+  % endif
 subquestion: |
-  If you do not want to list your phone number on your form, leave this blank.
+  % if i == 0:
+  If you do not want to list your phone number on your forms, leave this blank.
+  % else:
+  If you do not want to list their phone number on your forms, leave this blank.
+  % endif
 fields:
-  - Phone: users[0].phone_number
+  - Phone: x[i].phone_number
     datatype: al_international_phone
     required: False
 ---
 id: notice by email
+generic object: ALPeopleList
 question: |
+  % if i == 0:
   Do you have an email address?
+  % else:
+  Does your spouse have an email address?
+  % endif
 subquestion: |
-  If you have an email address, you must list it so the court and other parties can contact you about this case.
+  % if i == 0:
+  If you have an email address, you must list it so the court clerk can contact you about this case.
+  % else:
+  If your spouse has an email address, you must list it so the court clerk can contact them about this case.
+  % endif
 fields:
-  - "Email?": users[0].email_notice
+  - "Email?": x[i].email_notice
     datatype: yesnoradio
 ---
 id: email address
+generic object: ALPeopleList
 question: |
+  % if i == 0:
   What email address do you want to list on your court forms?
+  % else:
+  What email address does your spouse want to list on the court forms?
+  % endif
 subquestion: |
+  % if i == 0:
   If you do not want to enter your personal email address, you can create a new email account to get email about your case.
   
   Be sure to check this email daily, otherwise you may miss important information about your case.
+  % else:
+  If they do not want to enter their personal email address, they can create a new email account to get email about the case. 
+  
+  It is important to check this email daily or they may miss important information about the case.
+  % endif
 fields:
-  - Email address: users[0].email    
+  - Email address: x[i].email    
     datatype: email
-    #required: False
 ---
 id: e-signature
 question: |
-  % if motion_type == "Something else":
-  Do you want to add your e-signature to your ${ form_name }?
-  % else:
-  Do you want to add your e-signature to your Motion to Continue or Extend Time?
-  % endif
+  Do you want to add your e-signature to your name change forms?
 subquestion: |
   This program can put “**/s/ ${users[0].name.full(middle='full')}**” where you would sign your name. The court will accept this as your signature.
 
-  If you do not add your **{e-signature}** now, you must sign your paper forms before you file and deliver them.
+  If you do not add your **{e-signature}** now, you must sign your forms before you file them.
 
   ${ collapse_template(signature_help) }  
 fields:
@@ -1934,23 +1970,29 @@ template: signature_help
 subject: |
   **What does it mean to sign the forms?**
 content: |  
-  % if motion_type == "Something else":
-  By signing your *Motion*, you are certifying that:
+  By signing your forms, the person signing is certifying that:
   
   * Everything on the form is true and correct, and
-  * You understand that making a false statement on the form is perjury, which can result in criminal penalties.
+  * They understand that making a false statement on the form is perjury, which can result in criminal penalties.
   
   See the [**Code of Civil Procedure, 735 ILCS 5/1-109**](https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm), for more information.
-  % else:
-  By signing your *Motion to Continue or Extend Time*, you are certifying that:
-  
-  * You read the document,
-  * You believe it to be true and correct, and
-  * You are not filing it for an improper purpose, such as to cause delay.
+---
+id: spouse e-signature
+question: |
+  Does your spouse want to add their e-signature to their name change forms?
+subquestion: |
+  This program can put “**/s/ ${users[1].name.full(middle='full')}**” where they would sign their name. The court will accept this as their signature.
 
-  See **[Illinois Supreme Court Rule 137](https://www.illinoiscourts.gov/supreme-court-rules)** for more information.
-  % endif  
-  
+  If they do not add their **{e-signature}** now, they must sign your forms before filing.
+
+  ${ collapse_template(signature_help) }  
+fields:
+  - "Add e-signature?": e_signature_spouse
+    datatype: yesnoradio
+terms:
+  - "e-signature": |
+      An e-signature is an electronic signature. It is a digital version of a signature that has the same effect as a hand-written signature. 
+---
 
 
 ---
@@ -1985,9 +2027,6 @@ choices:
   - Fourth Municipal District, 1500 Maybrook Drive, Maywood: 18
   - Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview: 19
   - Sixth Municipal District, 16501 South Kedzie Parkway, Markham: 20
-  - Domestic Violence Court, 555 W. Harrison Street, Chicago: 21
-  - George N. Leighton Criminal Court Building, 2600 S. California Avenue, Chicago: 22
-  - Juvenile Center, 2245 West Ogden Avenue, Chicago: 23
 ---
 template: cook_district_help
 subject: |
