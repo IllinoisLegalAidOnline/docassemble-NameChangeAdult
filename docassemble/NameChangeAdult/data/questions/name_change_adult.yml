@@ -16,6 +16,7 @@ objects:
   - users[i].new: ALIndividual
   - divorce_location: ALAddress
   - users[i].convictions: DAList.using(object_type=Thing, there_are_any=True)
+  - orders: DAList.using(object_type=Thing, complete_attribute='complete', there_are_any=True)
   - other_parties: ALPeopleList.using(there_are_any=True)
   - other_parties[i].lawyer: ALIndividual
   - witness: ALIndividual
@@ -79,6 +80,8 @@ code: |
   users[0].misdemeanors
   users[0].felonies
   users[0].registry
+  if users[0].registry and users[0].registry_exceptions.all_false():
+    registry_kickout
   users[0].id_theft
   if users[0].felonies or users[0].registry or users[0].id_theft:
     user_conviction_intro
@@ -99,13 +102,18 @@ code: |
     users[1].name.first
     users[1].new.name.first
 
-    # do we need this again? with modified language? criminal_history_intro
+    # criminal_history_intro  do we need this again? with modified language? 
     users[1].pending_arrests
     users[1].pending_charges
     users[1].misdemeanors
     users[1].felonies
     users[1].registry
+    if users[1].registry and users[1].registry_exceptions.all_false():
+      registry_kickout
     users[1].id_theft
+    if users[1].felonies or users[1].registry or users[1].id_theft:
+      user_conviction_intro
+  	  users[1].convictions.gather()  
 
 
   
@@ -118,7 +126,9 @@ code: |
         no_waiver_grounds
       else:
         if waiver_reason['order'] == True:
-          whats_next  # replace this with which order question
+          if protective_order.any_true():
+            orders.gather()
+
         hardship_text
      
       #need to set logic and questions here so that publication info is asked (if known). These should be asked if no_waiver_grounds OR not divorce
@@ -497,6 +507,27 @@ terms:
   - "Gender-related identity": |
       The Illinois Human Rights Act states that gender-identity does not need to be the same as the  sex designated at birth.
 ---
+id: registry kickout
+event: registry_kickout
+question: |
+  Sorry
+subquestion: |
+  A person who committed crimes that require registration and is not pardoned cannot request a name change with this program. It may result in a felony.
+  
+  These include crimes that require registration under the:
+  
+  * Sex Offender Registration Act
+  * Murderer and Violent Offender Against Youth Act, or
+  * Arsonist Registration Act.
+  
+  Click **Back** if you made a mistake. Or you can talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
+buttons:
+  - Exit: exit
+  - Restart: restart
+
+
+
+---
 id: id theft
 generic object: ALPeopleList
 question: |
@@ -659,9 +690,34 @@ fields:
     choices:
       - I have or did have protection from a court order.: order
       - I need a waiver of notice and publication of name change because it would be a hardship for the person who is changing their name.: hardship
+---
+id: protective order type
+question: |
+  What kind of court protection do or did you have?
+subquestion: |
+  You can enter details about the order on another screen.
 
-
-
+  If you do any of these kinds of orders, you can click **Back** and change your answer.
+fields:
+  - I have or did have protection from: protective_order
+    datatype: checkboxes
+    minlength: 1
+    none of the above: False
+    choices:
+      - An Order of Protection: op
+      - A Stalking No Contact Order: snco
+      - A Civil No Contact Order: cnco
+      - A Protective order in someone else's criminal case: other_criminal
+      - Being a protected person under someone else's bail conditions: bail
+      - A similar protective order outside Illinois: other_order
+    validation messages:
+      minlength: |
+        Please select at least one or click < Back if none apply.
+  - In which state was the protective order? (not Illinois): other_order_state
+    maxlength: 25
+    show if:
+      variable: protective_order['other_order']
+      is: True
 ---
 id: hardship text
 question: |
@@ -683,6 +739,91 @@ subquestion: |
   Click **Back** if you want to change your answers. Otherwise, click **Next** to continue.
 
   TO DO: Add more information, especially minor child variants.
+
+---
+id: protective order details
+question: |
+  % if i == 0:
+  Protective order case details
+  % else:
+  More protective order case details
+  % endif
+subquestion: |
+  For any of the following, enter more information to your **Motion to Waive Notice and Publication**:
+  
+  % if protective_order['op']:
+   * An Order of Protection
+  % endif
+  % if protective_order['snco']:
+   * A Stalking No Contact Order
+  % endif
+  % if protective_order['cnco']:
+   * A Civil No Contact Order
+  % endif
+  % if protective_order['other_criminal']:
+   * A Protective order in someone else's criminal case
+  % endif
+  % if protective_order['bail']:
+   * Being a protected person under someone else's bail conditions
+  % endif
+  % if protective_order['other_order']:
+   * A similar protective order outside Illinois
+  % endif
+fields:
+  - Case number: orders[i].number
+    maxlength: 30
+  - County: orders[i].name.text
+    maxlength: 30
+  - State: orders[i].state
+    code: |
+      states_list()
+    default: IL      
+---
+id: any other orders
+question: |
+  Are there other protective order cases?
+subquestion: |
+  To waive notice and publication in the name change request, you must add details about the following cases:
+  
+  % if protective_order['op']:
+   * An Order of Protection
+  % endif
+  % if protective_order['snco']:
+   * A Stalking No Contact Order
+  % endif
+  % if protective_order['cnco']:
+   * A Civil No Contact Order
+  % endif
+  % if protective_order['other_criminal']:
+   * A Protective order in someone else's criminal case
+  % endif
+  % if protective_order['bail']:
+   * Being a protected person under someone else's bail conditions
+  % endif
+  % if protective_order['other_order']:
+   * A similar protective order outside Illinois
+  % endif
+  
+  You can enter up to 4 cases. So far you have told us about:
+  
+  % for order in orders:
+   * Case number: ${order.number} in ${order.name.text}, ${order.state}
+  % endfor
+fields:
+  - "Add another case?": orders.there_is_another
+    datatype: yesnoradio
+---
+code: |
+  orders[i].name.text
+  orders[i].complete = True
+---
+code: |
+  if orders.number_gathered() >= 4:
+    orders.there_is_another = False
+---
+
+
+
 
 
 
@@ -763,19 +904,6 @@ code: |
       evidence_shows
       due_diligence_effort
 
-    #witness_testimony
-    #available_date
-    #continue_reason_string_built
-    #else:
-    #  evidence_description
-    #  if used_due_diligence:
-    #    due_diligence_effort
-    #  else:
-    #    no_due_diligence
-    #  evidence_shows
-    #  available_date
-    #  continue_reason_string_built
-    
     preview_continue_or_extend
   else:
     unfinished_task
