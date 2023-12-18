@@ -37,6 +37,8 @@ code: |
   github_repo_name = 'docassemble-NameChangeAdult'
   allowed_courts = ['Circuit']
   interview_type = 'adult'
+  # child_notice variable used in child name change program
+  child_notice_would_be_published = False
 ---
 # Road map
 sections:
@@ -84,7 +86,7 @@ code: |
     registry_kickout
   users[0].id_theft
   if users[0].felonies or users[0].registry or users[0].id_theft:
-    user_conviction_intro
+    users[0].conviction_intro
   	users[0].convictions.gather()  
 
   set_progress(50)
@@ -108,11 +110,12 @@ code: |
     users[1].misdemeanors
     users[1].felonies
     users[1].registry
+    # need to adjust logic to let users[0] finish name change for themself if spouse does not pass registry kickout
     if users[1].registry and users[1].registry_exceptions.all_false():
       registry_kickout
     users[1].id_theft
     if users[1].felonies or users[1].registry or users[1].id_theft:
-      user_conviction_intro
+      users[1].conviction_intro
   	  users[1].convictions.gather()  
   
   set_progress(75)
@@ -379,7 +382,7 @@ subquestion: |
     To request a name change in Illinois, your spouse needs to tell the court about any criminal history they may have.
     % endif
   % else:
-    To request a name change in Illinois, your [child identifier] needs to tell the court about any criminal history they may have.
+    To request a name change for a child, you must tell the court about any criminal history the child may have.
   % endif
 
   TO DO: Add more information
@@ -394,7 +397,7 @@ question: |
     Does your spouse have any arrests for which charges have not been filed?
     % endif
   % else:
-  Does [child identifier] have any arrests for which charges have not been filed?
+  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any arrests for which charges have not been filed?
   % endif
 subquestion: |
   ADD INFO
@@ -413,7 +416,7 @@ question: |
     Do your spouse have any pending misdemeanor or felony charges?
     % endif
   % else:
-  Does [child identifier] have any pending misdemeanor or felony charges?
+  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any pending misdemeanor or felony charges?
   % endif
 subquestion: |
   % if interview_type == 'adult':
@@ -423,7 +426,7 @@ subquestion: |
     In other words, does your spouse have any ongoing criminal cases against them for misdemeanor or felony offenses?
     % endif
   % else:
-    In other words, does [child identifier] have any ongoing criminal cases against them for misdemeanor or felony offenses?
+    In other words, does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any ongoing criminal cases against them for misdemeanor or felony offenses?
   % endif
 fields:
   - no label: x[i].pending_charges
@@ -439,7 +442,7 @@ question: |
     Does your spouse have any convictions or were they placed on probation for any misdemeanors?
     % endif
   % else:
-  Does [child identifier] have any convictions or were they placed on probation for any misdemeanors?
+  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for any misdemeanors?
   % endif
 subquestion: |
   These can be misdemeanors in Illinois or any other state.
@@ -462,7 +465,7 @@ question: |
     Does your spouse have any convictions or were they placed on probation for any felonies?
     % endif
   % else:
-  Does [child identifier] have any convictions or were they placed on probation for any felonies?
+  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for any felonies?
   % endif
 subquestion: |
   These can be felonies in Illinois or any other state.
@@ -482,10 +485,10 @@ question: |
     % if i == 0:
     Do you have any convictions or were you placed on probation for a crime that required you register?
     % else:
-    Do your spouse have any convictions or were they placed on probation for a crime that required them register?
+    Do your spouse have any convictions or were they placed on probation for a crime that required them to register?
     % endif
   % else:
-  Do [child identifier] have any convictions or were they placed on probation for a crime that required them register?
+  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for a crime that required them register?
   % endif
 subquestion: |
   These include crimes that require registration under the:
@@ -527,6 +530,12 @@ fields:
 terms:
   - "Gender-related identity": |
       The Illinois Human Rights Act states that gender-identity does not need to be the same as the  sex designated at birth.
+  - "Offenses requiring registration": |
+      These include crimes that require registration under the:
+  
+       * Sex Offender Registration Act
+       * Murderer and Violent Offender Against Youth Act, or
+       * Arsonist Registration Act.
 ---
 id: registry kickout
 event: registry_kickout
@@ -545,9 +554,6 @@ subquestion: |
 buttons:
   - Exit: exit
   - Restart: restart
-
-
-
 ---
 id: id theft
 generic object: ALPeopleList
@@ -559,7 +565,7 @@ question: |
     Do your spouse have any convictions or were they placed on probation for identity theft?
     % endif
   % else:
-  Does [child identifier] have any convictions or were they placed on probation for identity theft?
+  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for identity theft?
   % endif
 subquestion: |
   This includes **identity theft** or **aggravated identity theft**.
@@ -573,97 +579,107 @@ subquestion: |
     Your spouse can still request a name change even if you answer **Yes**.
     % endif
   % else:
-  You can still request a name change for [child identifier] even if you answer **Yes**.
+  You can still request a name change for ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) even if you answer **Yes**.
   % endif
 fields:
   - no label: x[i].id_theft
     datatype: yesnoradio
 ---
-terms:
-  - "Offenses requiring registration": |
-      These include crimes that require registration under the:
-  
-       * Sex Offender Registration Act
-       * Murderer and Violent Offender Against Youth Act, or
-       * Arsonist Registration Act.
----
-id: user conviction intro
-continue button field: user_conviction_intro
+id: conviction intro
+generic object: ALPeopleList
+continue button field: x[i].conviction_intro
 question: |
   Criminal history details
 subquestion: |
-  For these convictions or probations, you must enter more information on your name change request:
-  
-  % if users[0].felonies:
+  % if interview_type == 'adult':
+    % if i == 0:
+    For these convictions or probations, you must enter more information on your name change request:
+    % else:
+    For these convictions or probations, you must enter more information on your spouse's name change request:
+    % endif
+  % else:
+  For these convictions or probations of ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}), you must enter more information:
+  % endif
+
+  % if x[i].felonies:
    * Felony convictions or probations
   % endif
-  % if users[0].registry:
+  % if x[i].registry:
    * **{Offenses requiring registration}**
   % endif
-  % if users[0].id_theft:
+  % if x[i].id_theft:
    * Identification theft or Aggravated identity theft
   % endif
+
 ---
 id: conviction details
+generic object: ALPeopleList
 question: |
-  % if i == 0:
+  % if j == 0:
   Conviction details
   % else:
   More conviction details
   % endif
 subquestion: |
+  % if interview_type == 'adult':
   For any of the following convictions or probations, you must enter more information on your name change request:
+  % else:
+  For any of the following convictions or probations of ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}), you must enter more information:
+  % endif
   
-  % if users[0].felonies:
+  % if x[i].felonies:
    * Felony convictions or probations
   % endif
-  % if users[0].registry:
+  % if x[i].registry:
    * **{Offenses requiring registration}**
   % endif
-  % if users[0].id_theft:
+  % if x[i].id_theft:
    * Identification theft or Aggravated identity theft
   % endif
 fields:
-  - Offense description: users[0].convictions[i].name.text
+  - Offense description: x[i].convictions[i].name.text
     maxlength: 30
-  - Date of conviction or probation: users[0].convictions[i].date
+  - Date of conviction or probation: x[i].convictions[i].date
     datatype: date
     max: ${ today().format("yyyy-MM-dd") }
-  - Sentence received: users[0].convictions[i].sentence
+  - Sentence received: x[i].convictions[i].sentence
     maxlength: 30
-  - Date sentence completed: users[0].convictions[i].completed_date
+  - Date sentence completed: x[i].convictions[i].completed_date
     datatype: date
     max: ${ today().format("yyyy-MM-dd") }
-  - Pardoned?: users[0].convictions[i].pardoned
+  - Pardoned?: x[i].convictions[i].pardoned
     datatype: yesnoradio
 
 ---
 id: any other convictions
+generic object: ALPeopleList
 question: |
   Are there other convictions?
 subquestion: |
+  % if interview_type == 'adult':
   For these convictions or probations, you must enter more information on your name change request:
-  
-  % if users[0].felonies:
+  % else:
+  For these convictions or probations of ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}), you must enter more information on your name change request:
+  % endif
+
+  % if x[i].felonies:
    * Felony convictions or probations
   % endif
-  % if users[0].registry:
+  % if x[i].registry:
    * **{Offenses requiring registration}**
   % endif
-  % if users[0].id_theft:
+  % if x[i].id_theft:
    * Identification theft or Aggravated identity theft
   % endif
   
   So far you have told us about:
   
-  % for conviction in users[0].convictions:
+  % for conviction in x[i].convictions:
    * ${conviction.name.text} on ${conviction.date}
   % endfor
 fields:
-  - "Add another conviction or probation?": users[0].convictions.there_is_another
+  - "Add another conviction or probation?": x[i].convictions.there_is_another
     datatype: yesnoradio
-
-
 
 ---
 id: notice intro
@@ -696,7 +712,15 @@ id: publication waiver reasons
 question: |
   Why do you need a waiver?
 subquestion: |
+  % if interview_type == 'adult':
   You may need a waiver if you have or did have protection from a court order. You may also need a waiver if publication would be a hardship for the person whose name would be changed.
+  % else:
+    % if children.number_gathered() == 1:
+    You may need a waiver if you have or did have protection from a court order. You may also need a waiver if publication would be a hardship for the child whose name would be changed.
+    % else:
+    You may need a waiver if you have or did have protection from a court order. You may also need a waiver if publication would be a hardship for the children whose names would be changed.
+    % endif
+  % endif
   
   A hardship can be many things. It can include fear of:
   
@@ -746,11 +770,34 @@ fields:
 ---
 id: hardship text
 question: |
+  % if interview_type == "child":
+    % if child_notice_would_be_published == True:
+    Explain why publication would be a hardship (optional)
+    % else:
+    Explain why giving notice would be a hardship (optional)
+    % endif
+  % else:
   Explain why notice and publication would be a hardship (optional)
+  % endif
 subquestion: |  
+  % if interview_type == "child":
+    % if child_notice_would_be_published == True:
+    There can be other reasons why notice by publication may be a hardship. For example, paying newspaper publication fees.
+    % else:
+    There can be other reasons why notice may be a hardship. 
+    % endif
+  % else:
   There can be other reasons why notice and publication may be a hardship. For example, paying newspaper publication fees.
+  % endif
   
-  This is optional. Your answers so far are enough for a judge to grant your request to waive notice an publication. They will go into your forms. Sometimes it is helpful to explain your hardship in your own words.
+  This is optional. Your answers so far are enough for a judge to grant your request to waive notice and publication. They will go into your forms. Sometimes it is helpful to explain your hardship in your own words.
+  
+  % if interview_type == "child":
+  ${collapse_template(child_notice_waiver_example)}
+  % else:
+  ${collapse_template(adult_notice_waiver_example)}
+  % endif
+
 fields:
   - Notice and publication would be a hardship because (optional):: hardship_text
     input type: area
@@ -758,6 +805,33 @@ fields:
     maxlength: 1000
     required: False
 ---
+template: child_notice_waiver_example
+subject: |
+  **What should my answer look like?**
+content: |  
+  % if children.number_gathered() == 1:
+  This explanation will go on your *Motion to Waive Notice and Publication*. You should explain why giving or publishing notice would put ${children[0].new.name.full(middle='full')} (AKA ${children[0].name.full(middle='full')}) at risk of physical harm or discrimination.
+  % else:
+  This explanation will go on your *Motion to Waive Notice and Publication*. You should explain why giving or publishing notice would put your children at risk of physical harm or discrimination.
+  % endif
+
+  Here are some examples: 
+  
+  "I need to change ${children[0].name.full(middle='full')}'s name to ${children[0].new.name.full(middle='full')} because we are trying to get away from my ex-boyfriend. He has abused ${children[0].name.full(middle='full')} in the past. I am afraid he will hurt ${children[0].name.full(middle='full')} if he learns about this name change request."
+  
+  "${children[0].name.full(middle='full')} wants to change their name to ${children[0].new.name.full(middle='full')} as part of a gender transition. I am afraid publishing notice of this change in the newspaper could lead to my child and I experiencing discrimination or targeted harassment."
+---
+template: adult_notice_waiver_example
+subject: |
+  **What should my answer look like?**
+content: |  
+  This explanation will go on your *Motion to Waive Notice and Publication*. You can explain why publishing your name change request in the newspaper would put you at risk or why it would be a hardship.
+  
+  Example: "I need a name change because I am trying to get away from my ex-boyfriend. He has abused me in the past. I am afraid he will hurt me if he learns about my name change request."
+
+
+---
+# not used can be deleted
 id: no waiver grounds
 continue button field: no_waiver_grounds
 question: |
@@ -860,15 +934,19 @@ subquestion: |
   You will have to publish this in a newspaper in the county where you live once a week for 3 weeks in a row. There may be a publication fee to put your notice in the newspaper.
   
   Your notice must have details about when your name change request will be in court. This includes a hearing date that the court clerk will give you. When you get the hearing date, ask for a date 6-8 weeks in the future to make sure you have plenty of time to set up the newspaper publication.
-  
+
+  % if interview_type == "adult":
   You can learn more from the "How to Change Your Name" instructions you can download at the end of this program.
+  % else:
+  You can learn more from the "How to Change Children's Names" instructions you can download at the end of this program.
+  % endif
 ---
 id: publication placeholder
 continue button field: publication_placeholder
 question: |
   Publication placeholder
 subquestion: |
-  TO DO: Do we ask for any information about the court hearing now, or should we just explain what info will need to be added to the Publication notice later?
+  TO DO: Explain that the user should put court hearing info in the Publication notice before giving it to the newspaper. Include a screenshot of the section that needs to be filled in after the user gets info from the clerk.
 
 ---
 id: hide address
