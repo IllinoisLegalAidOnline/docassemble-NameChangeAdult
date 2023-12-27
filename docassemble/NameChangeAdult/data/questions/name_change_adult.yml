@@ -112,11 +112,13 @@ code: |
     users[1].registry
     # need to adjust logic to let users[0] finish name change for themself if spouse does not pass registry kickout
     if users[1].registry and users[1].registry_exceptions.all_false():
-      registry_kickout
-    users[1].id_theft
-    if users[1].felonies or users[1].registry or users[1].id_theft:
-      users[1].conviction_intro
-  	  users[1].convictions.gather()  
+      spouse_registry_kickout
+      spouse_eligibility_check
+    else:
+      users[1].id_theft
+      if users[1].felonies or users[1].registry or users[1].id_theft:
+        users[1].conviction_intro
+    	  users[1].convictions.gather()  
   
   set_progress(75)
   nav.set_section('section_notice')
@@ -555,6 +557,29 @@ buttons:
   - Exit: exit
   - Restart: restart
 ---
+id: spouse registry kickout
+continue button field: spouse_registry_kickout
+question: |
+  Sorry
+subquestion: |
+  A person who committed crimes that require registration and is not pardoned cannot request a name change with this program. It may result in a felony.
+  
+  These include crimes that require registration under the:
+  
+  * Sex Offender Registration Act
+  * Murderer and Violent Offender Against Youth Act, or
+  * Arsonist Registration Act.
+  
+  This program cannot make name change forms for your spouse. You can talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
+  
+  Click **Back** if you made a mistake or click **Next** to make the forms for your name change.
+---
+depends on: users[1].registry_exceptions
+code: |
+  if change_spouse_name == "Yes" and (users[1].registry and users[1].registry_exceptions.all_false()):
+    change_spouse_name = "No"
+  spouse_eligibility_check = True
+---
 id: id theft
 generic object: ALPeopleList
 question: |
@@ -700,7 +725,7 @@ id: request waiver
 question: |
   Are you worried that publishing your name change request in the newspaper would be a hardship?
 subquestion: |
-  TO DO - add info, adjust for spouse & kids
+  You can ask the judge to skip publication of the name change if it would be a harship on the person asking for a name change. A hardship could include harm to health or safety.
 fields:
   - no label: request_waiver
     datatype: radio
@@ -2407,7 +2432,7 @@ subquestion: |
   
   Your forms are ready. View and download your forms below. Click **Make changes** to fix any mistakes.
 
-  This program does not file your Motion with the court or deliver it to other parties in your case. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
+  This program does not file your forms with the court. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
 
   ${ action_button_html(url_action('review_answers'), label=':edit: Make changes', color='success', size="md") }
   
@@ -2417,7 +2442,7 @@ subquestion: |
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
-  **Note:** This program does not file your Motion with the court or deliver it to other parties in your case. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
+  **Note:** This program does not file your forms with the court. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
   
   Thank you for using ILAO Easy Forms!
 under: |
@@ -2431,7 +2456,7 @@ under: |
 generic object: ALDocumentBundle
 template: x.send_email_template
 subject: |
-  Motion forms
+  Name change forms
 content: |
   Your forms are attached.
   
@@ -2441,7 +2466,7 @@ content: |
 ---
 objects:
   #- motion_attachment: ALDocument.using(title="Motion", filename="motion.pdf", has_addendum=True, default_overflow_message=" [Continued on Additional Motion]")
-  - motion_instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
+  - name_change_instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
   - motion_attachment: ALDocument.using(title="Motion", filename="motion.pdf", has_addendum=False)
   - additional_motion_attachment: ALDocument.using(title="Additional Motion", filename="additional_motion.pdf", has_addendum=False)
   - motion_additional_delivery: ALDocument.using(title="Additional Proof of Delivery", filename="motion_additional_proof_delivery.pdf", has_addendum=False)
@@ -2457,9 +2482,12 @@ objects:
   
 ---
 code: |
+  name_change_instructions.enabled = True
+  
+  
+ 
   motion_attachment.enabled = False
   additional_motion_attachment.enabled = False
-  motion_instructions.enabled = False
   motion_additional_delivery.enabled = False
   motion_additional_delivery_2.enabled = False
   motion_additional_delivery_3.enabled = False
@@ -2467,7 +2495,6 @@ code: |
   notice_attachment.enabled = False
   motion_order.enabled = False
   motion_continue_attachment.enabled = False
-  motion_continue_instructions.enabled = False
   statement_attachment.enabled = False
   motion_continue_order.enabled = False 
   motion_single_pdf_bundle.enabled = False
@@ -2501,7 +2528,7 @@ code: |
       
   if motion_type == "Something else":   
     motion_attachment.enabled = True
-    motion_instructions.enabled = True
+    name_change_instructions.enabled = True
     motion_order.enabled = True
     if motion_additional_page == True:
       additional_motion_attachment.enabled = True
@@ -2511,7 +2538,7 @@ code: |
     motion_continue_attachment.enabled = True
     if motion_type == "Reschedule a court date" and continue_reason_type != "Other":
       statement_attachment.enabled = True
-    motion_continue_instructions.enabled = True
+    name_change_instructions.enabled = True
     motion_continue_order.enabled = True 
     motion_single_pdf_bundle.enabled = False
     motion_continue_single_pdf_bundle.enabled = True
@@ -2532,22 +2559,12 @@ objects:
 #
 ---
 attachment:
-  variable name: motion_instructions[i]
-  name: motion_instructions
-  filename: motion-instructions
+  variable name: name_change_instructions[i]
+  name: name_change_instructions
+  filename: instructions
   skip undefined: True
   editable: False
-  pdf template file: motion_instructions.pdf
-  fields:
-      - "fake": ${ "" }
----
-attachment:
-  variable name: motion_continue_instructions[i]
-  name: motion_to_continue_instructions
-  filename: motion-to-continue-instructions
-  skip undefined: True
-  editable: False
-  pdf template file: motion_continue_instructions.pdf
+  pdf template file: instructions.pdf
   fields:
       - "fake": ${ "" }
 ---
