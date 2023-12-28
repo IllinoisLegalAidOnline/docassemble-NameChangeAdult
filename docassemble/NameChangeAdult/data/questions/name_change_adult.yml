@@ -1199,11 +1199,11 @@ subquestion: |
  
   ${ collapse_template(help_example) }  
 
-  Click on **{green words}** to learn what they mean. Some questions have a question mark in a circle ${ fa_icon("question-circle", color_css="#0dcaf0" ) } that also gives help.
+  Click on **{green words}** to learn what they mean. Some pages have a question mark in a circle ${ fa_icon("question-circle", color_css="#0dcaf0" ) } that helps explain things.
 ---
 template: help_example
 subject: |
-  **You can expand sections like this to show more information.**
+  **You can click sections like this to show more information.**
 content: |  
   This is an example of help. Click again to hide.
 ---
@@ -1535,26 +1535,7 @@ content: |
     2. I did not receive documents from the Plaintiff. On March 4, 2023, I asked Mr. James Jones to respond to the Request for Documents.
     3. As of March 23, 2023, I still did not get a response from the Plaintiff.
     4. I want the court to compel Plaintiff James Jones to respond to the Request for Documents by April 15, 2023.
----
-id: preview motion
-continue button field: preview_motion
-# removed b/c using al documents will automatically reconsider upon assembly using .as_pdf
-#reconsider:
-#  - motion_attachment['preview']
-question: |
-  Motion preview
-subquestion: |
-  Click the below image to preview your Motion.
-  
-  If this looks good, click **Next**.
-  
-  If you want to make changes, click **Back** or go to the [**Motion details**](${ url_action('section_motion') }) section.
-  
-  If you want to add another page, you can enter more text.
-  
-  **Note: this is not a complete form.** Finish the program to get all your forms.
 
-  ${ motion_attachment.as_pdf(key='preview').extract_pages(last=1) }
 ---
 id: add additional motion page
 question: |
@@ -1585,26 +1566,6 @@ fields:
     input type: area
     rows: 15
     maxlength: 2500
----
-id: preview additional motion
-continue button field: preview_additional_motion
-# removed b/c using al documents will automatically reconsider upon assembly using .as_pdf
-#reconsider:
-#  - additional_motion_attachment['preview']
-question: |
-  Motion and Additional Motion preview
-subquestion: |
-  Click the below image to preview your Motion and Additional Motion.
-
-  **Be sure all of your text fits on the Motion and Additional Motion forms.**
-
-  If this looks good, click **Next**.
-  
-  If you want to make changes, click **Back** or go to the [**Motion details**](${ url_action('section_motion') }) section.
-  
-  **Note: this is not a complete form.** Finish the program to get all your forms.
- 
-  ${ pdf_concatenate(motion_attachment['preview'].extract_pages(last=1), additional_motion_attachment['preview'], filename="motion-preview.pdf") }
 ---
 id: original court date
 question: |
@@ -2430,7 +2391,7 @@ subquestion: |
   
   Your forms are ready. View and download your forms below. Click **Make changes** to fix any mistakes.
 
-  This program does not file your forms with the court. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
+  This program **does not** file your forms with the court. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
 
   ${ action_button_html(url_action('review_answers'), label=':edit: Make changes', color='success', size="md") }
   
@@ -2440,7 +2401,7 @@ subquestion: |
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
-  **Note:** This program does not file your forms with the court. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
+  **Note:** This program **does not** file your forms with the court. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
   
   Thank you for using ILAO Easy Forms!
 under: |
@@ -2463,16 +2424,16 @@ content: |
   [Illinois Legal Aid Online](https://www.illinoislegalaid.org)
 ---
 objects:
-  #- motion_attachment: ALDocument.using(title="Motion", filename="motion.pdf", has_addendum=True, default_overflow_message=" [Continued on Additional Motion]")
-  - name_change_instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
-  - motion_attachment: ALDocument.using(title="Motion", filename="motion.pdf", has_addendum=False)
-  - additional_motion_attachment: ALDocument.using(title="Additional Motion", filename="additional_motion.pdf", has_addendum=False)
+  - instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
+  - request: ALDocument.using(title="Request", filename="request.pdf", has_addendum=False)
+  - order: ALDocument.using(title="Order", filename="order.pdf", has_addendum=False)
+  - order_to_waive_notice: ALDocument.using(title="Order to waive notice", filename="order_to_waive_notice.pdf", has_addendum=False)
+  
   - motion_additional_delivery: ALDocument.using(title="Additional Proof of Delivery", filename="motion_additional_proof_delivery.pdf", has_addendum=False)
   - motion_additional_delivery_2: ALDocument.using(title="Additional Proof of Delivery 2", filename="appearance_additional_proof_delivery_2.pdf", has_addendum=False)
   - motion_additional_delivery_3: ALDocument.using(title="Additional Proof of Delivery 3", filename="appearance_additional_proof_delivery_3.pdf", has_addendum=False)
   - motion_additional_delivery_blank: ALDocument.using(title="Additional Proof of Delivery (blank)", filename="motion_additional_proof_delivery_blank.pdf", has_addendum=False)
   - notice_attachment: ALDocument.using(title="Notice of Court Date for Motion", filename="notice_of_court_date.pdf", has_addendum=False)
-  - motion_order: ALDocument.using(title="Order", filename="order.pdf", has_addendum=False)
   - motion_continue_instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
   - motion_continue_attachment: ALDocument.using(title="Motion to Continue or Extend Time", filename="motion-to-continue.pdf", has_addendum=False)
   - statement_attachment: ALDocument.using(title="Statement of Missing Evidence or Witness", filename="statement.pdf", has_addendum=False)
@@ -2480,18 +2441,24 @@ objects:
   
 ---
 code: |
-  name_change_instructions.enabled = True
+  instructions.enabled = True
+  request.enabled = True
+  order.enabled = True
+  order_to_waive_notice.enabled = False
   
+  if request_waiver == True:  
+    order_to_waive_notice.enabled = True
+
+
+
   
  
-  motion_attachment.enabled = False
-  additional_motion_attachment.enabled = False
+
   motion_additional_delivery.enabled = False
   motion_additional_delivery_2.enabled = False
   motion_additional_delivery_3.enabled = False
   motion_additional_delivery_blank.enabled = False
   notice_attachment.enabled = False
-  motion_order.enabled = False
   motion_continue_attachment.enabled = False
   statement_attachment.enabled = False
   motion_continue_order.enabled = False 
@@ -2525,31 +2492,28 @@ code: |
     notice_single_pdf_bundle.enabled = False
       
   if motion_type == "Something else":   
-    motion_attachment.enabled = True
-    name_change_instructions.enabled = True
-    motion_order.enabled = True
-    if motion_additional_page == True:
-      additional_motion_attachment.enabled = True
+
+    instructions.enabled = True
+    order.enabled = True
     motion_single_pdf_bundle.enabled = True
     motion_continue_single_pdf_bundle.enabled = False
   else:
-    motion_continue_attachment.enabled = True
     if motion_type == "Reschedule a court date" and continue_reason_type != "Other":
       statement_attachment.enabled = True
-    name_change_instructions.enabled = True
+    instructions.enabled = True
     motion_continue_order.enabled = True 
     motion_single_pdf_bundle.enabled = False
     motion_continue_single_pdf_bundle.enabled = True
 
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[motion_instructions, motion_continue_instructions, motion_single_pdf_bundle, motion_continue_single_pdf_bundle, motion_additional_delivery_blank, notice_single_pdf_bundle, motion_order, motion_continue_order], filename="motion.pdf", title="All forms")
-  - al_court_bundle: ALDocumentBundle.using(elements=[motion_single_pdf_bundle, motion_continue_single_pdf_bundle, notice_single_pdf_bundle, motion_order, motion_continue_order], filename="motion.pdf", title="Motion")
----
-objects:
-  - motion_single_pdf_bundle: ALDocumentBundle.using(elements=[motion_attachment, additional_motion_attachment, motion_additional_delivery, motion_additional_delivery_2, motion_additional_delivery_3], filename="motion.pdf", title="Motion")
-  - motion_continue_single_pdf_bundle: ALDocumentBundle.using(elements=[motion_continue_attachment, statement_attachment, motion_additional_delivery, motion_additional_delivery_2, motion_additional_delivery_3], filename="motion.pdf", title="Motion to Continue or Extend Time")
-  - notice_single_pdf_bundle: ALDocumentBundle.using(elements=[notice_attachment, motion_additional_delivery, motion_additional_delivery_2, motion_additional_delivery_3], filename="notice.pdf", title="Notice of Court Date for Motion")
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request, order, motion_continue_order], filename="motion.pdf", title="All forms")
+  - al_court_bundle: ALDocumentBundle.using(elements=[request, order, motion_continue_order], filename="motion.pdf", title="Motion")
+#---
+#objects:
+  #- motion_single_pdf_bundle: ALDocumentBundle.using(elements=[motion_attachment, additional_motion_attachment, motion_additional_delivery, motion_additional_delivery_2, motion_additional_delivery_3], filename="motion.pdf", title="Motion")
+  #- motion_continue_single_pdf_bundle: ALDocumentBundle.using(elements=[motion_continue_attachment, statement_attachment, motion_additional_delivery, motion_additional_delivery_2, motion_additional_delivery_3], filename="motion.pdf", title="Motion to Continue or Extend Time")
+  #- notice_single_pdf_bundle: ALDocumentBundle.using(elements=[notice_attachment, motion_additional_delivery, motion_additional_delivery_2, motion_additional_delivery_3], filename="notice.pdf", title="Notice of Court Date for Motion")
 ---
 #code: |
 #  motion_attachment.overflow_fields['motion_body'].overflow_trigger = 1280
@@ -2557,8 +2521,8 @@ objects:
 #
 ---
 attachment:
-  variable name: name_change_instructions[i]
-  name: name_change_instructions
+  variable name: instructions[i]
+  name: instructions
   filename: instructions
   skip undefined: True
   editable: False
@@ -2567,78 +2531,113 @@ attachment:
       - "fake": ${ "" }
 ---
 attachment:
-  variable name: motion_attachment[i]
-  name: motion
-  filename: motion
+  variable name: request[i]
+  name: request
+  filename: request
   skip undefined: True
   editable: False
-  pdf template file: motion.pdf
+  pdf template file: name_change_request.pdf
   fields:
-      - "in_re": ${ "In re:" if in_re_check == True else ""} ${ in_re_label if in_re_check == True else ""}
-      - "trial_court_county": ${ trial_court.address.county.upper() }
-      - "plaintiffs": ${ users.full_names() if party_label == "plaintiff" or party_label == "petitioner" else other_parties.full_names()}
-      - "defendants": ${list_defendants(users.full_names(), other_parties.full_names(), anyone_opposing, party_label)}
-      - "preview_watermark": ${ watermark if i=='preview' else '' }
-      - "user__1": ${ users[0].name.full(middle="full") }
-      - "user__2": ${ users[0].name.full(middle="full") }
-      - "user__3": ${ users[0].name.full(middle="full") }
-      - "user_mail_address_line_one__1": ${ users[0].address.line_one(bare=True) }
-      - "user_mail_address_line_one__2": ${ users[0].address.line_one(bare=True) }
-      - "user_mail_address_city_state_zip__1": ${ users[0].address.line_two() }
-      - "user_mail_address_city_state_zip__2": ${ users[0].address.line_two() }
-      - "user_phone_number__1": ${ phone_number_formatted(users[0].phone_number) }
-      - "user_phone_number__2": ${ phone_number_formatted(users[0].phone_number) }
-      - "user_email": ${ users[0].email if users[0].email_notice else '' }
-      - "user_email__2": ${ users[0].email if users[0].email_notice else '' }
-      - "case_number__1": ${ case_number }
-      - "case_number__2": ${ case_number }
-      - "case_number__3": ${ case_number }
-      - "e_sign_name__1": ${ users[0].name.full(middle="full") if e_signature else '' }
-      - "e_sign_name__2": ${ users[0].name.full(middle="full") if e_signature else '' }
-      - "is_email_notice_yes": ${ users[0].email_notice }
-      - "motion_by_plaintiff": ${ party_label == "plaintiff" or party_label == "petitioner" }
-      - "motion_by_defendant": ${ party_label == "defendant" or party_label == "respondent" }
-      - "motion_summary": ${ motion_summary }
-      #- "motion_body": ${ motion_attachment.safe_value('motion_body', preserve_newlines=True) }
-      - "motion_body": ${ motion_body }
-      - "additional_motion_cb": ${ True if motion_additional_page else '' }
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user__1": ${ users[0].name.full(middle="full") }
+    - "user_name_first": ${  }
+    - "user_name_middle": ${  }
+    - "user_name_last": ${  }
+    - "user_name_first_new": ${  }
+    - "user_name_middle_new": ${  }
+    - "user_name_last_new": ${  }
+    - "user_resident_date": ${  }
+    - "user_dob": ${  }
+    - "user_birth_place": ${  }
+    - "user_divorce_no": ${  }
+    - "user_divorce_yes": ${  }
+    - "user_divorce_location": ${  }
+    - "user_divorce_date": ${  }
+    - "user_misdemeanor_yes": ${  }
+    - "user_misdemeanor_no": ${  }
+    - "user_pending_arrests_yes": ${  }
+    - "user_pending_arrests_no": ${  }
+    - "user_pending_charges_yes": ${  }
+    - "user_pending_charges_no": ${  }
+    - "user_felony_yes": ${  }
+    - "user_felony_no": ${  }
+    - "user_registry_yes": ${  }
+    - "user_registry_no": ${  }
+    - "user_registry_exception_marriage": ${  }
+    - "user_registry_exception_religion": ${  }
+    - "user_registry_exception_victim": ${  }
+    - "user_registry_exception_gender": ${  }
+    - "user_id_theft_yes": ${  }
+    - "user_id_theft_no": ${  }
+    - "user_offense_name_1": ${  }
+    - "user_conviction_date_1": ${  }
+    - "user_sentence_1": ${  }
+    - "user_sentence_completed_date_1": ${  }
+    - "user_pardoned_1": ${  }
+    - "user_offense_name_2": ${  }
+    - "user_conviction_date_2": ${  }
+    - "user_sentence_2": ${  }
+    - "user_sentence_completed_date_2": ${  }
+    - "user_pardoned_2": ${  }
+    - "user_offense_name_3": ${  }
+    - "user_conviction_date_3": ${  }
+    - "user_sentence_3": ${  }
+    - "user_sentence_completed_date_3": ${  }
+    - "user_pardoned_3": ${  }
+    - "spouse_name_first": ${  }
+    - "spouse_name_middle": ${  }
+    - "spouse_name_last": ${  }
+    - "spouse_name_first_new": ${  }
+    - "spouse_name_middle_new": ${  }
+    - "spouse_name_last_new": ${  }
+    - "spouse_resident_date": ${  }
+    - "spouse_dob": ${  }
+    - "spouse_birth_place": ${  }
+    - "spouse_misdemeanor_yes": ${  }
+    - "spouse_misdemeanor_no": ${  }
+    - "spouse_pending_arrests_yes": ${  }
+    - "spouse_pending_arrests_no": ${  }
+    - "spouse_pending_charges_yes": ${  }
+    - "spouse_pending_charges_no": ${  }
+    - "spouse_felony_yes": ${  }
+    - "spouse_felony_no": ${  }
+    - "spouse_registry_yes": ${  }
+    - "spouse_registry_no": ${  }
+    - "spouse_registry_exception_marriage": ${  }
+    - "spouse_registry_exception_religion": ${  }
+    - "spouse_registry_exception_victim": ${  }
+    - "spouse_registry_exception_gender": ${  }
+    - "spouse_id_theft_yes": ${  }
+    - "spouse_id_theft_no": ${  }
+    - "spouse_offense_name_1": ${  }
+    - "spouse_conviction_date_1": ${  }
+    - "spouse_sentence_1": ${  }
+    - "spouse_sentence_completed_date_1": ${  }
+    - "spouse_pardoned_1": ${  }
+    - "spouse_offense_name_2": ${  }
+    - "spouse_conviction_date_2": ${  }
+    - "spouse_sentence_2": ${  }
+    - "spouse_sentence_completed_date_2": ${  }
+    - "spouse_pardoned_2": ${  }
+    - "spouse_offense_name_3": ${  }
+    - "spouse_conviction_date_3": ${  }
+    - "spouse_sentence_3": ${  }
+    - "spouse_sentence_completed_date_3": ${  }
+    - "spouse_pardoned_3": ${  }
+    - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
+    - "user__2": ${ users[0].name.full(middle="full") }
+    - "user_address": ${  }
+    - "user_hide_address_cb": ${  }
+    - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
+    - "user_atty_number": ${  }
+    - "user_email": ${ users[0].email if users[0].email_notice else '' }
+    - "spouse_signature": ${ users[1].name.full(middle="full") if e_signature_spouse else '' }
+    - "spouse_name": ${ users[1].name.full(middle="full") }
+    - "spouse_address": ${  }
+    - "spouse_phone": ${ phone_number_formatted(users[1].phone_number) }
+    - "spouse_atty_number": ${  }
+    - "spouse_email": ${ users[1].email if users[1].email_notice else '' }
       
-      - "delivery_party1_name_full": | 
-          % if delivery_parties[0].is_represented:
-          ${ delivery_parties[0].lawyer.name.full(middle="full") }, (lawyer for ${ delivery_parties[0].name.full(middle="full") })
-          % else:
-          ${ delivery_parties[0].name.full(middle="full") }
-          % endif
-      - "delivery_party1_mail_address_on_one_line": ${ delivery_parties[0].address.on_one_line(bare=True) }
-      - "delivery_party1_email": ${ delivery_parties[0].delivery_email if delivery_parties[0].knows_delivery_method else '' }
-      - "is_delivery_party1_hand_yes": ${ delivery_parties[0].hand_delivery if delivery_parties[0].knows_delivery_method else '' }
-      - "is_delivery_party1_mail_yes": ${ delivery_parties[0].mail_delivery if delivery_parties[0].knows_delivery_method else '' }
-      - "is_delivery_party1_efm_yes": ${ delivery_parties[0].efm_delivery if delivery_parties[0].knows_delivery_method else '' }
-      - "is_delivery_party1_email_yes": ${ delivery_parties[0].email_delivery if delivery_parties[0].knows_delivery_method else '' }
-      - "delivery_party1_date": ${ delivery_parties[0].delivery_date if delivery_parties[0].knows_delivery_method and delivery_parties[0].knows_delivery_date else '' }
-      - "delivery_party1_time": ${ format_time(delivery_parties[0].delivery_time, format='h:mm') if delivery_parties[0].knows_delivery_method and delivery_parties[0].knows_delivery_time else '' }
-      - "is_delivery_party1_am_yes": ${ True if delivery_parties[0].knows_delivery_method and format_time(delivery_parties[0].delivery_time, format='a')=='AM' else '' }
-      - "is_delivery_party1_am_no": ${ True if delivery_parties[0].knows_delivery_method and format_time(delivery_parties[0].delivery_time, format='a')=='PM' else '' }
-
-      - "delivery_party2_name_full": | 
-          % if delivery_parties[1].is_represented:
-          ${ delivery_parties[1].lawyer.name.full(middle="full") }, (lawyer for ${ delivery_parties[1].name.full(middle="full") })
-          % else:
-          ${ delivery_parties[1].name.full(middle="full") }
-          % endif
-      - "delivery_party2_mail_address_on_one_line": ${ delivery_parties[1].address.on_one_line(bare=True) }
-      - "delivery_party2_email": ${ delivery_parties[1].delivery_email if delivery_parties[1].knows_delivery_method else '' }
-      - "is_delivery_party2_hand_yes": ${ delivery_parties[1].hand_delivery if delivery_parties[1].knows_delivery_method else '' }
-      - "is_delivery_party2_mail_yes": ${ delivery_parties[1].mail_delivery if delivery_parties[1].knows_delivery_method else '' }
-      - "is_delivery_party2_efm_yes": ${ delivery_parties[1].efm_delivery if delivery_parties[1].knows_delivery_method else '' }
-      - "is_delivery_party2_email_yes": ${ delivery_parties[1].email_delivery if delivery_parties[1].knows_delivery_method else '' }
-      - "delivery_party2_date": ${ delivery_parties[1].delivery_date if delivery_parties[1].knows_delivery_method and delivery_parties[1].knows_delivery_date else '' }
-      - "delivery_party2_time": ${ format_time(delivery_parties[1].delivery_time, format='h:mm') if delivery_parties[1].knows_delivery_method and delivery_parties[1].knows_delivery_time else '' }
-      - "is_delivery_party2_am_yes": ${ True if delivery_parties[1].knows_delivery_method and format_time(delivery_parties[1].delivery_time, format='a')=='AM' else '' }
-      - "is_delivery_party2_am_no": ${ True if delivery_parties[1].knows_delivery_method and format_time(delivery_parties[1].delivery_time, format='a')=='PM' else '' }
-
-      - "is_additional_proof_delivery_yes": ${ delivery_parties.number() > 2 }
----
 ---
 attachment:
   variable name: additional_motion_attachment[i]
@@ -3056,21 +3055,28 @@ attachment:
       - "is_additional_proof_delivery_yes": ${ delivery_parties.number() > 2 }
 ---
 attachment:
-  variable name: motion_order[i]
+  variable name: order[i]
   name: order
   filename: order
   skip undefined: True
   editable: False
-  pdf template file: order_on_motion.pdf
+  pdf template file: name_change_order.pdf
   fields:
-      - "in_re": ${ "In re:" if in_re_check == True else ""} ${ in_re_label if in_re_check == True else ""}
-      - "trial_court_county": ${ trial_court.address.county.upper() }
-      - "plaintiffs": ${ users.full_names() if party_label == "plaintiff" or party_label == "petitioner" else other_parties.full_names()}
-      - "defendants": ${list_defendants(users.full_names(), other_parties.full_names(), anyone_opposing, party_label)}
-      - "case_number__1": ${ case_number }
-      - "motion_by_plaintiff": ${ party_label == "plaintiff" or party_label == "petitioner" }
-      - "motion_by_defendant": ${ party_label == "defendant" or party_label == "respondent" }
-      - "motion_summary": ${ motion_summary }
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user": ${ users[0].name.full(middle="full") }
+---
+attachment:
+  variable name: order_to_waive_notice[i]
+  name: order_to_waive_notice
+  filename: order_to_waive_notice
+  skip undefined: True
+  editable: False
+  pdf template file: order_to_waive_notice.pdf
+  fields:
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user": ${ users[0].name.full(middle="full") }
+
+
 ---
 attachment:
   variable name: motion_continue_order[i]
