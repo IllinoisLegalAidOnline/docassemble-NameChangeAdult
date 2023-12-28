@@ -65,7 +65,6 @@ code: |
   if users[0].age_in_years() < 18:
     not_adult
   if users[0].is_resident == True:
-    #date_debug
     if date_difference(starting=users[0].resident_date , ending=today() ).years < 0.5:
       not_resident
   else:
@@ -110,7 +109,6 @@ code: |
     users[1].misdemeanors
     users[1].felonies
     users[1].registry
-    # need to adjust logic to let users[0] finish name change for themself if spouse does not pass registry kickout
     if users[1].registry and users[1].registry_exceptions.all_false():
       spouse_registry_kickout
       spouse_eligibility_check
