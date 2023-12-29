@@ -725,17 +725,17 @@ subquestion: |
    * Identification theft or Aggravated identity theft
   % endif
 fields:
-  - Offense description: x[i].convictions[i].name.text
+  - Offense description: x[i].convictions[j].name.text
     maxlength: 30
-  - Date of conviction or probation: x[i].convictions[i].date
+  - Date of conviction or probation: x[i].convictions[j].date
     datatype: date
     max: ${ today().format("yyyy-MM-dd") }
-  - Sentence received: x[i].convictions[i].sentence
+  - Sentence received: x[i].convictions[j].sentence
     maxlength: 30
-  - Date sentence completed: x[i].convictions[i].completed_date
+  - Date sentence completed: x[i].convictions[j].completed_date
     datatype: date
     max: ${ today().format("yyyy-MM-dd") }
-  - Pardoned?: x[i].convictions[i].pardoned
+  - Pardoned?: x[i].convictions[j].pardoned
     datatype: yesnoradio
 
 ---
@@ -890,7 +890,7 @@ fields:
   - Notice and publication would be a hardship because (optional):: hardship_text
     input type: area
     rows: 10
-    maxlength: 1000
+    maxlength: 750
     required: False
 ---
 template: child_notice_waiver_example
@@ -2595,120 +2595,164 @@ attachment:
     - "user_registry_exception_gender": ${ True if users[0].registry == True and users[0].registry_exceptions['Gender-related identity'] == True else '' }
     - "user_id_theft_yes": ${ True if users[0].id_theft == True else '' }
     - "user_id_theft_no": ${ True if users[0].id_theft == False else '' }
-    - "user_offense_name_1": ${  }
-    - "user_conviction_date_1": ${  }
-    - "user_sentence_1": ${  }
-    - "user_sentence_completed_date_1": ${  }
-    - "user_pardoned_1": ${  }
-    - "user_offense_name_2": ${  }
-    - "user_conviction_date_2": ${  }
-    - "user_sentence_2": ${  }
-    - "user_sentence_completed_date_2": ${  }
-    - "user_pardoned_2": ${  }
-    - "user_offense_name_3": ${  }
-    - "user_conviction_date_3": ${  }
-    - "user_sentence_3": ${  }
-    - "user_sentence_completed_date_3": ${  }
-    - "user_pardoned_3": ${  }
-    - "spouse_name_first": ${  }
-    - "spouse_name_middle": ${  }
-    - "spouse_name_last": ${  }
-    - "spouse_name_first_new": ${  }
-    - "spouse_name_middle_new": ${  }
-    - "spouse_name_last_new": ${  }
-    - "spouse_resident_date": ${ users[1].resident_date }
-    - "spouse_dob": ${ users[1].birthdate }
+    - "user_offense_name_1": ${ users[0].convictions[0].name.text }
+    - "user_conviction_date_1": ${ format_date(users[0].convictions[0].date, format='MM/dd/yyyy') }
+    - "user_sentence_1": ${ users[0].convictions[0].sentence }
+    - "user_sentence_completed_date_1": ${ format_date(users[0].convictions[0].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_1": |
+        % if users[0].convictions[0].name.text != "":
+        % if users[0].convictions[0].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_2": ${ users[0].convictions[1].name.text }
+    - "user_conviction_date_2": ${ format_date(users[0].convictions[1].date, format='MM/dd/yyyy') }
+    - "user_sentence_2": ${ users[0].convictions[1].sentence }
+    - "user_sentence_completed_date_2": ${ format_date(users[0].convictions[1].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_2": |
+        % if users[0].convictions[1].name.text != "":
+        % if users[0].convictions[1].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_3": ${ users[0].convictions[2].name.text }
+    - "user_conviction_date_3": ${ format_date(users[0].convictions[2].date, format='MM/dd/yyyy') }
+    - "user_sentence_3": ${ users[0].convictions[2].sentence }
+    - "user_sentence_completed_date_3": ${ format_date(users[0].convictions[2].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_3": |
+        % if users[0].convictions[2].name.text != "":
+        % if users[0].convictions[2].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+
+    - "spouse_name_first": ${ users[1].name.first if change_spouse_name == "Yes" else '' }
+    - "spouse_name_middle": ${ users[1].name.middle if change_spouse_name == "Yes" else '' }
+    - "spouse_name_last": ${ users[1].name.last if change_spouse_name == "Yes" else '' }
+    - "spouse_name_first_new": ${ users[1].new.name.first if change_spouse_name == "Yes" else '' }
+    - "spouse_name_middle_new": ${ users[1].new.name.middle if change_spouse_name == "Yes" else '' }
+    - "spouse_name_last_new": ${ users[1].new.name.last if change_spouse_name == "Yes" else '' }
+    - "spouse_resident_date": ${ users[1].resident_date if change_spouse_name == "Yes" else '' }
+    - "spouse_dob": ${ users[1].birthdate if change_spouse_name == "Yes" else '' }
     - "spouse_birth_place": |
-        % if users[1].in_america:
+        % if users[1].in_america and change_spouse_name == "Yes":
         ${ users[1].birthplace.city }, ${users[1].birthplace.county}, ${users[1].birthplace.state}, United States
         % else:
-        % if users[1].birthplace.intl_text != "":
+        % if users[1].birthplace.intl_text != "" and change_spouse_name == "Yes":
         ${ users[1].birthplace.city }, ${ users[1].birthplace.intl_text}, ${users[1].birthplace.country}
         % else:
         ${ users[1].birthplace.city }, ${users[1].birthplace.country}        
         % endif
         % endif
-    - "spouse_misdemeanor_yes": ${  }
-    - "spouse_misdemeanor_no": ${  }
-    - "spouse_pending_arrests_yes": ${  }
-    - "spouse_pending_arrests_no": ${  }
-    - "spouse_pending_charges_yes": ${  }
-    - "spouse_pending_charges_no": ${  }
-    - "spouse_felony_yes": ${  }
-    - "spouse_felony_no": ${  }
-    - "spouse_registry_yes": ${  }
-    - "spouse_registry_no": ${  }
-    - "spouse_registry_exception_marriage": ${  }
-    - "spouse_registry_exception_religion": ${  }
-    - "spouse_registry_exception_victim": ${  }
-    - "spouse_registry_exception_gender": ${  }
-    - "spouse_id_theft_yes": ${  }
-    - "spouse_id_theft_no": ${  }
-    - "spouse_offense_name_1": ${  }
-    - "spouse_conviction_date_1": ${  }
-    - "spouse_sentence_1": ${  }
-    - "spouse_sentence_completed_date_1": ${  }
-    - "spouse_pardoned_1": ${  }
-    - "spouse_offense_name_2": ${  }
-    - "spouse_conviction_date_2": ${  }
-    - "spouse_sentence_2": ${  }
-    - "spouse_sentence_completed_date_2": ${  }
-    - "spouse_pardoned_2": ${  }
-    - "spouse_offense_name_3": ${  }
-    - "spouse_conviction_date_3": ${  }
-    - "spouse_sentence_3": ${  }
-    - "spouse_sentence_completed_date_3": ${  }
-    - "spouse_pardoned_3": ${  }
+    - "spouse_misdemeanor_yes": ${ True if users[1].misdemeanors == True and change_spouse_name == "Yes" else '' }
+    - "spouse_misdemeanor_no": ${ True if users[1].misdemeanors == False and change_spouse_name == "Yes" else '' }
+    - "spouse_pending_arrests_yes": ${ True if users[1].pending_arrests == True and change_spouse_name == "Yes" else '' }
+    - "spouse_pending_arrests_no": ${ True if users[1].pending_arrests == False and change_spouse_name == "Yes" else '' }
+    - "spouse_pending_charges_yes": ${ True if users[1].pending_charges == True and change_spouse_name == "Yes" else '' }
+    - "spouse_pending_charges_no": ${ True if users[1].pending_charges == False and change_spouse_name == "Yes" else '' }
+    - "spouse_felony_yes": ${ True if users[1].felonies == True and change_spouse_name == "Yes" else '' }
+    - "spouse_felony_no": ${ True if users[1].felonies == False and change_spouse_name == "Yes" else '' }
+    - "spouse_registry_yes": ${ True if users[1].registry == True and change_spouse_name == "Yes" else '' }
+    - "spouse_registry_no": ${ True if users[1].registry == False and change_spouse_name == "Yes" else '' }
+    
+    - "spouse_registry_exception_marriage": ${ True if users[1].registry == True and users[1].registry_exceptions['Marriage'] == True and change_spouse_name == "Yes" else '' }
+    - "spouse_registry_exception_religion": ${ True if users[1].registry == True and users[1].registry_exceptions['Religious beliefs'] == True and change_spouse_name == "Yes" else '' }
+    - "spouse_registry_exception_victim": ${ True if users[1].registry == True and users[1].registry_exceptions['Status as a victim of trafficking'] == True and change_spouse_name == "Yes" else '' }
+    - "spouse_registry_exception_gender": ${ True if users[1].registry == True and users[1].registry_exceptions['Gender-related identity'] == True and change_spouse_name == "Yes" else '' }
+    - "spouse_id_theft_yes": ${ True if users[1].id_theft == True and change_spouse_name == "Yes" else '' }
+    - "spouse_id_theft_no": ${ True if users[1].id_theft == False and change_spouse_name == "Yes" else '' }
+    - "spouse_offense_name_1": ${ users[1].convictions[0].name.text }
+    - "spouse_conviction_date_1": ${ format_date(users[1].convictions[0].date, format='MM/dd/yyyy') }
+    - "spouse_sentence_1": ${ users[1].convictions[0].sentence }
+    - "spouse_sentence_completed_date_1": ${ format_date(users[1].convictions[0].completed_date, format='MM/dd/yyyy') }
+    - "spouse_pardoned_1": |
+        % if users[1].convictions[0].name.text != "":
+        % if users[1].convictions[0].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "spouse_offense_name_2": ${ users[1].convictions[1].name.text }
+    - "spouse_conviction_date_2": ${ format_date(users[1].convictions[1].date, format='MM/dd/yyyy') }
+    - "spouse_sentence_2": ${ users[1].convictions[1].sentence }
+    - "spouse_sentence_completed_date_2": ${ format_date(users[1].convictions[1].completed_date, format='MM/dd/yyyy') }
+    - "spouse_pardoned_2": |
+        % if users[1].convictions[1].name.text != "":
+        % if users[1].convictions[1].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "spouse_offense_name_3": ${ users[1].convictions[2].name.text }
+    - "spouse_conviction_date_3": ${ format_date(users[1].convictions[2].date, format='MM/dd/yyyy') }
+    - "spouse_sentence_3": ${ users[1].convictions[2].sentence }
+    - "spouse_sentence_completed_date_3": ${ format_date(users[1].convictions[2].completed_date, format='MM/dd/yyyy') }
+    - "spouse_pardoned_3": |
+        % if users[1].convictions[2].name.text != "":
+        % if users[1].convictions[2].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
     - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
     - "user__2": ${ users[0].name.full(middle="full") }
-    - "user_address": ${ users[0].address.on_one_line(bare=True) if hide_address == False else '' }
+    - "user_address": ${ users[0].address.on_one_line(bare=True) }
     - "user_hide_address_cb": ${ True if hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
     - "user_atty_number": ${ '' }
     - "user_email": ${ users[0].email if users[0].email_notice else '' }
-    - "spouse_signature": ${ users[1].name.full(middle="full") if e_signature_spouse else '' }
-    - "spouse_name": ${ users[1].name.full(middle="full") }
-    - "spouse_address": ${ users[1].address.on_one_line(bare=True) }
-    - "spouse_phone": ${ phone_number_formatted(users[1].phone_number) }
+    - "spouse_signature": ${ users[1].name.full(middle="full") if e_signature_spouse and change_spouse_name == "Yes" else '' }
+    - "spouse_name": ${ users[1].name.full(middle="full") if change_spouse_name == "Yes" else '' }
+    - "spouse_address": ${ users[1].address.on_one_line(bare=True) if change_spouse_name == "Yes" else '' }
+    - "spouse_phone": ${ phone_number_formatted(users[1].phone_number) if change_spouse_name == "Yes" else '' }
     - "spouse_atty_number": ${ '' }
-    - "spouse_email": ${ users[1].email if users[1].email_notice else '' }
+    - "spouse_email": ${ users[1].email if users[1].email_notice and change_spouse_name == "Yes" else '' }
 ---
 attachment:
-  variable name: motion[i]
-  name: motion
-  filename: motion
+  variable name: motion_to_waive_notice[i]
+  name: motion_to_waive_notice
+  filename: motion_to_waive_notice
   skip undefined: True
   editable: False
   pdf template file: motion_to_waive_notice.pdf
   fields:      
     - "trial_court_county": ${ trial_court.address.county.upper() }
     - "user__1": ${ users[0].name.full(middle="full") }
-    - "waiver_order_cb": ${  }
-    - "protective_order_op": ${  }
-    - "protective_order_snco": ${  }
-    - "protective_order_cnco": ${  }
-    - "protective_order_criminal": ${  }
-    - "protective_order_bail": ${  }
-    - "protective_order_other": ${  }
-    - "protective_order_other_state": ${  }
-    - "protective_order_minor_parent": ${  }
-    - "waiver_hardship_cb": ${  }
-    - "hardship_text": ${  }
-    - "order_county_1": ${  }
-    - "order_state_1": ${  }
-    - "order_case_number_1": ${  }
-    - "order_county_2": ${  }
-    - "order_state_2": ${  }
-    - "order_case_number_2": ${  }
-    - "order_county_3": ${  }
-    - "order_state_3": ${  }
-    - "order_case_number_3": ${  }
-    - "order_county_4": ${  }
-    - "order_state_4": ${  }
-    - "order_case_number_4": ${  }
+    - "waiver_order_cb": ${ True if waiver_reason['order'] == True else '' }
+    - "protective_order_op": ${ True if protective_order['op'] == True else '' }
+    - "protective_order_snco": ${ True if protective_order['snco'] == True else '' }
+    - "protective_order_cnco": ${ True if protective_order['cnco'] == True else '' }
+    - "protective_order_criminal": ${ True if protective_order['other_criminal'] == True else '' }
+    - "protective_order_bail": ${ True if protective_order['bail'] == True else '' }
+    - "protective_order_other": ${ True if protective_order['other_order'] == True else '' }
+    - "protective_order_other_state": ${ other_order_state if protective_order['other_order'] else '' }
+    - "protective_order_minor_parent": ${ '' }
+    - "waiver_hardship_cb": ${ True if waiver_reason['hardship'] == True else '' }
+    - "hardship_text": ${ hardship_text }
+    - "order_county_1": ${ orders[0].name.text if waiver_reason['order'] == True else '' }
+    - "order_state_1": ${ orders[0].state if waiver_reason['order'] == True else '' }
+    - "order_case_number_1": ${ orders[0].number if waiver_reason['order'] == True else '' }
+    - "order_county_2": ${ orders[1].name.text if waiver_reason['order'] == True else '' }
+    - "order_state_2": ${ orders[1].state if waiver_reason['order'] == True else '' }
+    - "order_case_number_2": ${ orders[1].number if waiver_reason['order'] == True else '' }
+    - "order_county_3": ${ orders[2].name.text if waiver_reason['order'] == True else '' }
+    - "order_state_3": ${ orders[2].state if waiver_reason['order'] == True else '' }
+    - "order_case_number_3": ${ orders[2].number if waiver_reason['order'] == True else '' }
+    - "order_county_4": ${ orders[3].name.text if waiver_reason['order'] == True else '' }
+    - "order_state_4": ${ orders[3].state if waiver_reason['order'] == True else '' }
+    - "order_case_number_4": ${ orders[3].number if waiver_reason['order'] == True else '' }
     - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
     - "user__2": ${ users[0].name.full(middle="full") }
-    - "user_address": ${ users[0].address.on_one_line(bare=True) if hide_address == False else '' }
+    - "user_address": ${ users[0].address.on_one_line(bare=True) }
     - "user_hide_address_cb": ${ True if hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
     - "user_atty_number": ${ '' }
@@ -2735,7 +2779,7 @@ attachment:
     - "clerk_website": ${ trial_court.website }
     - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
     - "user__2": ${ users[0].name.full(middle="full") }
-    - "user_address": ${ users[0].address.on_one_line(bare=True) if hide_address == False else '' }
+    - "user_address": ${ users[0].address.on_one_line(bare=True) }
     - "user_hide_address_cb": ${ True if hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
     - "user_atty_number": ${ '' }
