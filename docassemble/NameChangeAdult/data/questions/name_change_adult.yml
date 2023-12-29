@@ -14,6 +14,7 @@ include:
 objects:
   - users: ALPeopleList.using(there_are_any=True)
   - users[i].new: ALIndividual
+  - users[i].birthplace: ALAddress
   - divorce_location: ALAddress
   - users[i].convictions: DAList.using(object_type=Thing, there_are_any=True)
   - orders: DAList.using(object_type=Thing, complete_attribute='complete', there_are_any=True)
@@ -64,6 +65,7 @@ code: |
   users[0].birthdate
   if users[0].age_in_years() < 18:
     not_adult
+  users[0].birthplace.city
   if users[0].is_resident == True:
     if date_difference(starting=users[0].resident_date , ending=today() ).years < 0.5:
       not_resident
@@ -94,6 +96,7 @@ code: |
     users[1].birthdate
     if users[1].age_in_years() < 18:
       not_adult
+    users[1].birthplace.city
     if users[1].is_resident == True:
       if date_difference(starting=users[1].resident_date , ending=today() ).years < 0.5:
         not_resident
@@ -163,7 +166,7 @@ code: |
 
   set_progress(100)
   nav.set_section('section_download')
-  download_placeholder
+  get_docs_screen
 ---
 id: birthdate
 question: |
@@ -173,6 +176,37 @@ fields:
     datatype: BirthDate
     alMax: ${ today().format("yyyy-MM-dd") }
 ---
+id: birth place
+question: |
+  Where were you born?
+fields:
+  - Were you born in the United States?: users[0].in_america
+    datatype: yesnoradio
+    default: True
+  - City: users[0].birthplace.city
+  - County: users[0].birthplace.county
+    show if: 
+      variable: users[0].in_america
+      is: True
+  - State: users[0].birthplace.state
+    show if: 
+      variable: users[0].in_america
+      is: True
+    code: |
+      states_list() 
+  - County (if applicable), and State or province: users[0].birthplace.intl_text
+    required: False
+    help: |
+      List the county and list the state or province, separated by a comma, if applicable.
+    show if: 
+      variable: users[0].in_america
+      is: False
+  - Country (outside US): users[0].birthplace.country
+    show if: 
+      variable: users[0].in_america
+      is: False    
+    
+---
 id: spouse birthdate
 question: |
   When was your spouse born?
@@ -180,6 +214,37 @@ fields:
   - Date of birth: users[1].birthdate
     datatype: BirthDate
     alMax: ${ today().format("yyyy-MM-dd") }
+---
+id: spouse birth place
+question: |
+  Where was your spouse born?
+fields:
+  - Were they born in the United States?: users[1].in_america
+    datatype: yesnoradio
+    default: True
+  - City: users[1].birthplace.city
+  - County: users[1].birthplace.county
+    show if: 
+      variable: users[1].in_america
+      is: True
+  - State: users[1].birthplace.state
+    show if: 
+      variable: users[1].in_america
+      is: True
+    code: |
+      states_list() 
+  - County (if applicable), and State or province: users[1].birthplace.intl_text
+    required: False
+    help: |
+      List the county and list the state or province, separated by a comma, if applicable.
+    show if: 
+      variable: users[1].in_america
+      is: False
+  - Country (outside US): users[1].birthplace.country
+    show if: 
+      variable: users[1].in_america
+      is: False    
+    
 ---
 id: user continuous illinois residence
 question: |
@@ -346,7 +411,7 @@ fields:
     show if:
       variable: divorce_in_us
       is: True
-  - County: divorce_location.county
+  - County (enter the city if there is no county): divorce_location.county
     show if:
       variable: divorce_in_us
       is: False
@@ -1086,10 +1151,10 @@ code: |
   if motion_type == "Something else":
     motion_summary
     motion_body
-    preview_motion
+    #preview_motion
     if motion_additional_page:
       additional_motion_body
-      preview_additional_motion
+      #preview_additional_motion
   elif motion_type == "Reschedule a court date":
     if date_difference(starting=reschedule_date, ending=today()).days > 30:
       beyond_30_days
@@ -1114,7 +1179,7 @@ code: |
       evidence_shows
       due_diligence_effort
 
-    preview_continue_or_extend
+    #preview_continue_or_extend
   else:
     unfinished_task
     if date_difference(starting=current_deadline, ending=today()).days > 30:
@@ -1126,7 +1191,7 @@ code: |
 
     new_deadline
     extension_reason
-    preview_continue_or_extend
+    #preview_continue_or_extend
     
   e_signature
 
@@ -1932,84 +1997,85 @@ fields:
     rows: 7
     maxlength: 390
 ---
-id: preview motion to continue or extend
-continue button field: preview_continue_or_extend
-reconsider:
-  - motion_continue_attachment['preview']
-question: |
-  Motion to Continue or Extend Time preview
-subquestion: |
-  Click the below image to preview your *Motion to Continue or Extend Time*.
-  
-  If this looks good, click **Next**.
-  
-  If you want to make changes, click **Back** or go to the [**Motion details**](${ url_action('section_motion') }) section.
-  
-  **Note: this is not a complete form.** Finish the program to get all your forms.
- 
-  % if motion_type == "Reschedule a court date" and continue_reason_type != "Other":
-  ${ pdf_concatenate(motion_continue_attachment.as_pdf(key='preview').extract_pages(last=1), statement_attachment.as_pdf(key='preview').extract_pages(last=2), filename="motion-continue-preview.pdf") }
-  % else:
-  ${ motion_continue_attachment.as_pdf(key='preview').extract_pages(last=1) }
-  % endif  
+#id: preview motion to continue or extend
+#continue button field: preview_continue_or_extend
+#reconsider:
+#  - motion_continue_attachment['preview']
+#question: |
+#  Motion to Continue or Extend Time preview
+#subquestion: |
+#  Click the below image to preview your *Motion to Continue or Extend Time*.
+#  
+#  If this looks good, click **Next**.
+#  
+#  If you want to make changes, click **Back** or go to the [**Motion details**](${ url_action('section_motion') }) section.
+#  
+#  **Note: this is not a complete form.** Finish the program to get all your forms.
+# 
+#  % if motion_type == "Reschedule a court date" and continue_reason_type != "Other":
+#  ${ pdf_concatenate(motion_continue_attachment.as_pdf(key='preview').extract_pages(last=1), statement_attachment.as_pdf(key='preview').extract_pages(last=2), filename="motion-continue-preview.pdf") }
+#  % else:
+#  ${ motion_continue_attachment.as_pdf(key='preview').extract_pages(last=1) }
+#  % endif  
 ---
 id: phone number
-generic object: ALPeopleList
 question: |
-  % if i == 0:
   What is your phone number?
-  % else:
-  What is your spouse's phone number?
-  % endif
 subquestion: |
-  % if i == 0:
   If you do not want to list your phone number on your forms, leave this blank.
-  % else:
-  If you do not want to list their phone number on your forms, leave this blank.
-  % endif
 fields:
-  - Phone: x[i].phone_number
+  - Phone: users[0].phone_number
+    datatype: al_international_phone
+    required: False
+---
+id: spouse phone number
+question: |
+  What is your spouse's phone number?
+subquestion: |
+  If you do not want to list their phone number on your forms, leave this blank.
+fields:
+  - Spouse's phone: users[1].phone_number
     datatype: al_international_phone
     required: False
 ---
 id: notice by email
-generic object: ALPeopleList
 question: |
-  % if i == 0:
   Do you have an email address?
-  % else:
-  Does your spouse have an email address?
-  % endif
 subquestion: |
-  % if i == 0:
   If you have an email address, you must list it so the court clerk can contact you about this case.
-  % else:
-  If your spouse has an email address, you must list it so the court clerk can contact them about this case.
-  % endif
 fields:
-  - "Email?": x[i].email_notice
+  - "Email?": users[0].email_notice
+    datatype: yesnoradio
+---
+id: spouse notice by email
+question: |
+  Does your spouse have an email address?
+subquestion: |
+  If your spouse has an email address, you must list it so the court clerk can contact them about this case.
+fields:
+  - "Spouse email?": users[1].email_notice
     datatype: yesnoradio
 ---
 id: email address
-generic object: ALPeopleList
 question: |
-  % if i == 0:
   What email address do you want to list on your court forms?
-  % else:
-  What email address does your spouse want to list on the court forms?
-  % endif
 subquestion: |
-  % if i == 0:
   If you do not want to enter your personal email address, you can create a new email account to get email about your case.
   
   Be sure to check this email daily, otherwise you may miss important information about your case.
-  % else:
+fields:
+  - Email address: users[0].email    
+    datatype: email
+---
+id: spouse email address
+question: |
+  What email address does your spouse want to list on the court forms?
+subquestion: |
   If they do not want to enter their personal email address, they can create a new email account to get email about the case. 
   
   It is important to check this email daily or they may miss important information about the case.
-  % endif
 fields:
-  - Email address: x[i].email    
+  - Spouse's email address: users[1].email    
     datatype: email
 ---
 id: e-signature
@@ -2049,7 +2115,7 @@ subquestion: |
 
   ${ collapse_template(signature_help) }  
 fields:
-  - "Add e-signature?": e_signature_spouse
+  - "Add spouse's e-signature?": e_signature_spouse
     datatype: yesnoradio
 terms:
   - "e-signature": |
@@ -2425,17 +2491,20 @@ content: |
 ---
 objects:
   - instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
-  - request: ALDocument.using(title="Request", filename="request.pdf", has_addendum=False)
-  - order: ALDocument.using(title="Order", filename="order.pdf", has_addendum=False)
-  - order_to_waive_notice: ALDocument.using(title="Order to waive notice", filename="order_to_waive_notice.pdf", has_addendum=False)
-  
+  - request: ALDocument.using(title="Request for name change", filename="request.pdf", has_addendum=False)
+  - order: ALDocument.using(title="Order for name change", filename="order.pdf", has_addendum=False)
+  - motion_to_waive_notice: ALDocument.using(title="Motion to Waive Notice and Publication", filename="motion_to_waive_notice.pdf", has_addendum=False)
+  - order_to_waive_notice: ALDocument.using(title="Order to Waive Notice and Publication", filename="order_to_waive_notice.pdf", has_addendum=False)
+  - publication_notice: ALDocument.using(title="Publication Notice", filename="publication_notice.pdf", has_addendum=False)
+  - publication_notice_spouse: ALDocument.using(title="Publication Notice for spouse", filename="publication_notice_spouse.pdf", has_addendum=False)
+
+
   - motion_additional_delivery: ALDocument.using(title="Additional Proof of Delivery", filename="motion_additional_proof_delivery.pdf", has_addendum=False)
   - motion_additional_delivery_2: ALDocument.using(title="Additional Proof of Delivery 2", filename="appearance_additional_proof_delivery_2.pdf", has_addendum=False)
   - motion_additional_delivery_3: ALDocument.using(title="Additional Proof of Delivery 3", filename="appearance_additional_proof_delivery_3.pdf", has_addendum=False)
   - motion_additional_delivery_blank: ALDocument.using(title="Additional Proof of Delivery (blank)", filename="motion_additional_proof_delivery_blank.pdf", has_addendum=False)
   - notice_attachment: ALDocument.using(title="Notice of Court Date for Motion", filename="notice_of_court_date.pdf", has_addendum=False)
   - motion_continue_instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
-  - motion_continue_attachment: ALDocument.using(title="Motion to Continue or Extend Time", filename="motion-to-continue.pdf", has_addendum=False)
   - statement_attachment: ALDocument.using(title="Statement of Missing Evidence or Witness", filename="statement.pdf", has_addendum=False)
   - motion_continue_order: ALDocument.using(title="Order", filename="order.pdf", has_addendum=False)
   
@@ -2444,81 +2513,26 @@ code: |
   instructions.enabled = True
   request.enabled = True
   order.enabled = True
+  motion_to_waive_notice.enabled = False
   order_to_waive_notice.enabled = False
-  
+  publication_notice.enabled = False
+  publication_notice_spouse.enabled = False
+
   if request_waiver == True:  
+    motion_to_waive_notice.enabled = True
     order_to_waive_notice.enabled = True
 
-
-
-  
- 
-
-  motion_additional_delivery.enabled = False
-  motion_additional_delivery_2.enabled = False
-  motion_additional_delivery_3.enabled = False
-  motion_additional_delivery_blank.enabled = False
-  notice_attachment.enabled = False
-  motion_continue_attachment.enabled = False
-  statement_attachment.enabled = False
-  motion_continue_order.enabled = False 
-  motion_single_pdf_bundle.enabled = False
-  motion_continue_single_pdf_bundle.enabled = False
-  notice_single_pdf_bundle.enabled = False
-
-  if anyone_opposing == True:
-    notice_single_pdf_bundle.enabled = True
-    if delivery_parties.number() < 3:
-      notice_attachment.enabled = True
-    elif delivery_parties.number() < 5:
-      motion_additional_delivery.enabled = True
-      notice_attachment.enabled = True
-    elif delivery_parties.number() < 7:
-      motion_additional_delivery.enabled = True
-      motion_additional_delivery_2.enabled = True
-      notice_attachment.enabled = True
-    elif delivery_parties.number() < 9:
-      motion_additional_delivery.enabled = True
-      motion_additional_delivery_2.enabled = True
-      motion_additional_delivery_3.enabled = True
-      notice_attachment.enabled = True
-    else:
-      motion_additional_delivery.enabled = True
-      motion_additional_delivery_2.enabled = True
-      motion_additional_delivery_3.enabled = True
-      motion_additional_delivery_blank.enabled = True
-      notice_attachment.enabled = True
-  else:
-    notice_single_pdf_bundle.enabled = False
-      
-  if motion_type == "Something else":   
-
-    instructions.enabled = True
-    order.enabled = True
-    motion_single_pdf_bundle.enabled = True
-    motion_continue_single_pdf_bundle.enabled = False
-  else:
-    if motion_type == "Reschedule a court date" and continue_reason_type != "Other":
-      statement_attachment.enabled = True
-    instructions.enabled = True
-    motion_continue_order.enabled = True 
-    motion_single_pdf_bundle.enabled = False
-    motion_continue_single_pdf_bundle.enabled = True
+  if users[0].after_divorce == False:
+    if request_waiver == False:
+      publication_notice.enabled = True
+  	if change_spouse_name == "Yes":
+	    publication_notice_spouse.enabled = True
 
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request, order, motion_continue_order], filename="motion.pdf", title="All forms")
-  - al_court_bundle: ALDocumentBundle.using(elements=[request, order, motion_continue_order], filename="motion.pdf", title="Motion")
-#---
-#objects:
-  #- motion_single_pdf_bundle: ALDocumentBundle.using(elements=[motion_attachment, additional_motion_attachment, motion_additional_delivery, motion_additional_delivery_2, motion_additional_delivery_3], filename="motion.pdf", title="Motion")
-  #- motion_continue_single_pdf_bundle: ALDocumentBundle.using(elements=[motion_continue_attachment, statement_attachment, motion_additional_delivery, motion_additional_delivery_2, motion_additional_delivery_3], filename="motion.pdf", title="Motion to Continue or Extend Time")
-  #- notice_single_pdf_bundle: ALDocumentBundle.using(elements=[notice_attachment, motion_additional_delivery, motion_additional_delivery_2, motion_additional_delivery_3], filename="notice.pdf", title="Notice of Court Date for Motion")
----
-#code: |
-#  motion_attachment.overflow_fields['motion_body'].overflow_trigger = 1280
-#  motion_attachment.overflow_fields.gathered = True  
-#
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request, motion_to_waive_notice, order_to_waive_notice, publication_notice, publication_notice_spouse, order], filename="name_change_request.pdf", title="All forms")
+  - al_court_bundle: ALDocumentBundle.using(elements=[request, motion_to_waive_notice, order_to_waive_notice, order], filename="name_change_request.pdf", title="Name change request")
+
 ---
 attachment:
   variable name: instructions[i]
@@ -2540,35 +2554,47 @@ attachment:
   fields:
     - "trial_court_county": ${ trial_court.address.county.upper() }
     - "user__1": ${ users[0].name.full(middle="full") }
-    - "user_name_first": ${  }
-    - "user_name_middle": ${  }
-    - "user_name_last": ${  }
-    - "user_name_first_new": ${  }
-    - "user_name_middle_new": ${  }
-    - "user_name_last_new": ${  }
-    - "user_resident_date": ${  }
-    - "user_dob": ${  }
-    - "user_birth_place": ${  }
-    - "user_divorce_no": ${  }
-    - "user_divorce_yes": ${  }
-    - "user_divorce_location": ${  }
-    - "user_divorce_date": ${  }
-    - "user_misdemeanor_yes": ${  }
-    - "user_misdemeanor_no": ${  }
-    - "user_pending_arrests_yes": ${  }
-    - "user_pending_arrests_no": ${  }
-    - "user_pending_charges_yes": ${  }
-    - "user_pending_charges_no": ${  }
-    - "user_felony_yes": ${  }
-    - "user_felony_no": ${  }
-    - "user_registry_yes": ${  }
-    - "user_registry_no": ${  }
-    - "user_registry_exception_marriage": ${  }
-    - "user_registry_exception_religion": ${  }
-    - "user_registry_exception_victim": ${  }
-    - "user_registry_exception_gender": ${  }
-    - "user_id_theft_yes": ${  }
-    - "user_id_theft_no": ${  }
+    - "user_name_first": ${ users[0].name.first }
+    - "user_name_middle": ${ users[0].name.middle }
+    - "user_name_last": ${ users[0].name.last }
+    - "user_name_first_new": ${ users[0].new.name.first }
+    - "user_name_middle_new": ${ users[0].new.name.middle }
+    - "user_name_last_new": ${ users[0].new.name.last }
+    - "user_resident_date": ${ users[0].resident_date }
+    - "user_dob": ${ users[0].birthdate }
+    - "user_birth_place": |
+        % if users[0].in_america:
+        ${ users[0].birthplace.city }, ${users[0].birthplace.county}, ${users[0].birthplace.state}, United States
+        % else:
+        % if users[0].birthplace.intl_text != "":
+        ${ users[0].birthplace.city }, ${ users[0].birthplace.intl_text}, ${users[0].birthplace.country}
+        % else:
+        ${ users[0].birthplace.city }, ${users[0].birthplace.country}        
+        % endif
+        % endif
+    - "user_divorce_no": ${ True if users[0].after_divorce == False else '' }
+    - "user_divorce_yes": ${ True if users[0].after_divorce == True else '' }
+    - "user_divorce_location": |
+        % if users[0].after_divorce:
+        ${ divorce_location.county }, ${divorce_location.state}
+        % endif
+    - "user_divorce_date": ${ divorce_date if users[0].after_divorce else '' }
+    - "user_misdemeanor_yes": ${ True if users[0].misdemeanors == True else '' }
+    - "user_misdemeanor_no": ${ True if users[0].misdemeanors == False else '' }
+    - "user_pending_arrests_yes": ${ True if users[0].pending_arrests == True else '' }
+    - "user_pending_arrests_no": ${ True if users[0].pending_arrests == False else '' }
+    - "user_pending_charges_yes": ${ True if users[0].pending_charges == True else '' }
+    - "user_pending_charges_no": ${ True if users[0].pending_charges == False else '' }
+    - "user_felony_yes": ${ True if users[0].felonies == True else '' }
+    - "user_felony_no": ${ True if users[0].felonies == False else '' }
+    - "user_registry_yes": ${ True if users[0].registry == True else '' }
+    - "user_registry_no": ${ True if users[0].registry == False else '' }
+    - "user_registry_exception_marriage": ${ True if users[0].registry == True and users[0].registry_exceptions['Marriage'] == True else '' }
+    - "user_registry_exception_religion": ${ True if users[0].registry == True and users[0].registry_exceptions['Religious beliefs'] == True else '' }
+    - "user_registry_exception_victim": ${ True if users[0].registry == True and users[0].registry_exceptions['Status as a victim of trafficking'] == True else '' }
+    - "user_registry_exception_gender": ${ True if users[0].registry == True and users[0].registry_exceptions['Gender-related identity'] == True else '' }
+    - "user_id_theft_yes": ${ True if users[0].id_theft == True else '' }
+    - "user_id_theft_no": ${ True if users[0].id_theft == False else '' }
     - "user_offense_name_1": ${  }
     - "user_conviction_date_1": ${  }
     - "user_sentence_1": ${  }
@@ -2590,9 +2616,18 @@ attachment:
     - "spouse_name_first_new": ${  }
     - "spouse_name_middle_new": ${  }
     - "spouse_name_last_new": ${  }
-    - "spouse_resident_date": ${  }
-    - "spouse_dob": ${  }
-    - "spouse_birth_place": ${  }
+    - "spouse_resident_date": ${ users[1].resident_date }
+    - "spouse_dob": ${ users[1].birthdate }
+    - "spouse_birth_place": |
+        % if users[1].in_america:
+        ${ users[1].birthplace.city }, ${users[1].birthplace.county}, ${users[1].birthplace.state}, United States
+        % else:
+        % if users[1].birthplace.intl_text != "":
+        ${ users[1].birthplace.city }, ${ users[1].birthplace.intl_text}, ${users[1].birthplace.country}
+        % else:
+        ${ users[1].birthplace.city }, ${users[1].birthplace.country}        
+        % endif
+        % endif
     - "spouse_misdemeanor_yes": ${  }
     - "spouse_misdemeanor_no": ${  }
     - "spouse_pending_arrests_yes": ${  }
@@ -2626,36 +2661,136 @@ attachment:
     - "spouse_pardoned_3": ${  }
     - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
     - "user__2": ${ users[0].name.full(middle="full") }
-    - "user_address": ${  }
-    - "user_hide_address_cb": ${  }
+    - "user_address": ${ users[0].address.on_one_line(bare=True) if hide_address == False else '' }
+    - "user_hide_address_cb": ${ True if hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
-    - "user_atty_number": ${  }
+    - "user_atty_number": ${ '' }
     - "user_email": ${ users[0].email if users[0].email_notice else '' }
     - "spouse_signature": ${ users[1].name.full(middle="full") if e_signature_spouse else '' }
     - "spouse_name": ${ users[1].name.full(middle="full") }
-    - "spouse_address": ${  }
+    - "spouse_address": ${ users[1].address.on_one_line(bare=True) }
     - "spouse_phone": ${ phone_number_formatted(users[1].phone_number) }
-    - "spouse_atty_number": ${  }
+    - "spouse_atty_number": ${ '' }
     - "spouse_email": ${ users[1].email if users[1].email_notice else '' }
-      
 ---
 attachment:
-  variable name: additional_motion_attachment[i]
-  name: additional_motion
-  filename: additional-motion
-  pdf template file: additional_motion.pdf
+  variable name: motion[i]
+  name: motion
+  filename: motion
   skip undefined: True
   editable: False
+  pdf template file: motion_to_waive_notice.pdf
+  fields:      
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user__1": ${ users[0].name.full(middle="full") }
+    - "waiver_order_cb": ${  }
+    - "protective_order_op": ${  }
+    - "protective_order_snco": ${  }
+    - "protective_order_cnco": ${  }
+    - "protective_order_criminal": ${  }
+    - "protective_order_bail": ${  }
+    - "protective_order_other": ${  }
+    - "protective_order_other_state": ${  }
+    - "protective_order_minor_parent": ${  }
+    - "waiver_hardship_cb": ${  }
+    - "hardship_text": ${  }
+    - "order_county_1": ${  }
+    - "order_state_1": ${  }
+    - "order_case_number_1": ${  }
+    - "order_county_2": ${  }
+    - "order_state_2": ${  }
+    - "order_case_number_2": ${  }
+    - "order_county_3": ${  }
+    - "order_state_3": ${  }
+    - "order_case_number_3": ${  }
+    - "order_county_4": ${  }
+    - "order_state_4": ${  }
+    - "order_case_number_4": ${  }
+    - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
+    - "user__2": ${ users[0].name.full(middle="full") }
+    - "user_address": ${ users[0].address.on_one_line(bare=True) if hide_address == False else '' }
+    - "user_hide_address_cb": ${ True if hide_address else '' }
+    - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
+    - "user_atty_number": ${ '' }
+    - "user_email": ${ users[0].email if users[0].email_notice else '' }
+---
+attachment:
+  variable name: publication_notice[i]
+  name: publication_notice
+  filename: publication_notice
+  skip undefined: True
+  editable: False
+  pdf template file: publication_notice.pdf
   fields:
-      - "in_re": ${ "In re:" if in_re_check == True else ""} ${ in_re_label if in_re_check == True else ""}
-      - "trial_court_county": ${ trial_court.address.county.upper() }
-      - "plaintiffs": ${ users.full_names() if party_label == "plaintiff" or party_label == "petitioner" else other_parties.full_names()}
-      - "defendants": ${list_defendants(users.full_names(), other_parties.full_names(), anyone_opposing, party_label)}
-      - "preview_watermark": ${ watermark if i=='preview' else '' }
-      
-      - "case_number__1": ${ case_number }
-      - "motion_summary": ${ motion_summary }
-      - "motion_body": ${ additional_motion_body }
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user__1": ${ users[0].name.full(middle="full") }
+    - "user_name_first": ${ users[0].name.first }
+    - "user_name_middle": ${ users[0].name.middle }
+    - "user_name_last": ${ users[0].name.last }
+    - "user_name_first_new": ${ users[0].new.name.first }
+    - "user_name_middle_new": ${ users[0].new.name.middle }
+    - "user_name_last_new": ${ users[0].new.name.last }
+    - "courthouse_address": ${ courthouse_info }
+    - "clerk_phone": ${ trial_court.phone }
+    - "clerk_website": ${ trial_court.website }
+    - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
+    - "user__2": ${ users[0].name.full(middle="full") }
+    - "user_address": ${ users[0].address.on_one_line(bare=True) if hide_address == False else '' }
+    - "user_hide_address_cb": ${ True if hide_address else '' }
+    - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
+    - "user_atty_number": ${ '' }
+    - "user_email": ${ users[0].email if users[0].email_notice else '' }
+---
+attachment:
+  variable name: publication_notice_spouse[i]
+  name: publication_notice_spouse
+  filename: publication_notice_spouse
+  skip undefined: True
+  editable: False
+  pdf template file: publication_notice.pdf
+  fields:
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user__1": ${ users[1].name.full(middle="full") }
+    - "user_name_first": ${ users[1].name.first }
+    - "user_name_middle": ${ users[1].name.middle }
+    - "user_name_last": ${ users[1].name.last }
+    - "user_name_first_new": ${ users[1].new.name.first }
+    - "user_name_middle_new": ${ users[1].new.name.middle }
+    - "user_name_last_new": ${ users[1].new.name.last }
+    - "courthouse_address": ${ courthouse_info }
+    - "clerk_phone": ${ trial_court.phone }
+    - "clerk_website": ${ trial_court.website }
+    - "user_signature": ${ users[1].name.full(middle="full") if e_signature else '' }
+    - "user__2": ${ users[1].name.full(middle="full") }
+    - "user_address": ${ users[1].address.on_one_line(bare=True) }
+    - "user_hide_address_cb": ${ '' }
+    - "user_phone": ${ phone_number_formatted(users[1].phone_number) }
+    - "user_atty_number": ${ '' }
+    - "user_email": ${ users[0].email if users[1].email_notice else '' }
+---
+attachment:
+  variable name: order[i]
+  name: order
+  filename: order
+  skip undefined: True
+  editable: False
+  pdf template file: name_change_order.pdf
+  fields:
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user": ${ users[0].name.full(middle="full") }
+---
+attachment:
+  variable name: order_to_waive_notice[i]
+  name: order_to_waive_notice
+  filename: order_to_waive_notice
+  skip undefined: True
+  editable: False
+  pdf template file: order_to_waive_notice.pdf
+  fields:
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user": ${ users[0].name.full(middle="full") }
+
+
 ---
 attachment:
   variable name: motion_continue_attachment[i]
@@ -3053,29 +3188,6 @@ attachment:
       - "is_delivery_party2_am_no": ${ True if delivery_parties[1].knows_delivery_method and format_time(delivery_parties[1].delivery_time, format='a')=='PM' else '' }
 
       - "is_additional_proof_delivery_yes": ${ delivery_parties.number() > 2 }
----
-attachment:
-  variable name: order[i]
-  name: order
-  filename: order
-  skip undefined: True
-  editable: False
-  pdf template file: name_change_order.pdf
-  fields:
-    - "trial_court_county": ${ trial_court.address.county.upper() }
-    - "user": ${ users[0].name.full(middle="full") }
----
-attachment:
-  variable name: order_to_waive_notice[i]
-  name: order_to_waive_notice
-  filename: order_to_waive_notice
-  skip undefined: True
-  editable: False
-  pdf template file: order_to_waive_notice.pdf
-  fields:
-    - "trial_court_county": ${ trial_court.address.county.upper() }
-    - "user": ${ users[0].name.full(middle="full") }
-
 
 ---
 attachment:
