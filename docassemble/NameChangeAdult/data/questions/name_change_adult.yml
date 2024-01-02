@@ -760,7 +760,7 @@ subquestion: |
    * Identification theft or Aggravated identity theft
   % endif
   
-  So far you have told us about:
+  You can enter up to 17 convictions in total. So far you have told us about:
   
   % for conviction in x[i].convictions:
    * ${conviction.name.text} on ${conviction.date}
@@ -768,7 +768,16 @@ subquestion: |
 fields:
   - "Add another conviction or probation?": x[i].convictions.there_is_another
     datatype: yesnoradio
-
+---
+code: |
+  if users[0].convictions.number_gathered() >= 17:
+    users[0].convictions.there_is_another = False
+---
+code: |
+  #not sure if the change_spouse_name check is needed - will test
+  #if change_spouse_name == "Yes":
+  if users[1].convictions.number_gathered() >= 17:
+    users[1].convictions.there_is_another = False
 ---
 id: notice intro
 continue button field: notice_intro
@@ -2492,6 +2501,8 @@ content: |
 objects:
   - instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
   - request: ALDocument.using(title="Request for name change", filename="request.pdf", has_addendum=False)
+  - additional_criminal_history: ALDocument.using(title="Additional Criminal History", filename="name_change_additional_criminal_history.pdf", has_addendum=False)  
+  - spouse_additional_criminal_history: ALDocument.using(title="Additional Criminal History", filename="name_change_additional_criminal_history.pdf", has_addendum=False)  
   - order: ALDocument.using(title="Order for name change", filename="order.pdf", has_addendum=False)
   - motion_to_waive_notice: ALDocument.using(title="Motion to Waive Notice and Publication", filename="motion_to_waive_notice.pdf", has_addendum=False)
   - order_to_waive_notice: ALDocument.using(title="Order to Waive Notice and Publication", filename="order_to_waive_notice.pdf", has_addendum=False)
@@ -2512,11 +2523,21 @@ objects:
 code: |
   instructions.enabled = True
   request.enabled = True
+  request_pdf_bundle.enabled = True
+  additional_criminal_history.enabled = False
+  spouse_additional_criminal_history.enabled = False
   order.enabled = True
   motion_to_waive_notice.enabled = False
   order_to_waive_notice.enabled = False
   publication_notice.enabled = False
   publication_notice_spouse.enabled = False
+  
+  if users[0].convictions.number() > 3:
+    additional_criminal_history.enabled = True
+	if change_spouse_name == "Yes":    
+    if users[1].convictions.number() > 3:
+      spouse_additional_criminal_history.enabled = True
+    
 
   if request_waiver == True:  
     motion_to_waive_notice.enabled = True
@@ -2530,9 +2551,11 @@ code: |
 
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request, motion_to_waive_notice, order_to_waive_notice, publication_notice, publication_notice_spouse, order], filename="name_change_request.pdf", title="All forms")
-  - al_court_bundle: ALDocumentBundle.using(elements=[request, motion_to_waive_notice, order_to_waive_notice, order], filename="name_change_request.pdf", title="Name change request")
-
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, publication_notice, publication_notice_spouse, order], filename="name_change_request.pdf", title="All forms")
+  - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, order], filename="name_change_request.pdf", title="Name change request")
+---
+objects:
+  - request_pdf_bundle: ALDocumentBundle.using(elements=[request, additional_criminal_history, spouse_additional_criminal_history], filename="request.pdf", title="Request for name change")
 ---
 attachment:
   variable name: instructions[i]
@@ -2716,6 +2739,367 @@ attachment:
     - "spouse_phone": ${ phone_number_formatted(users[1].phone_number) if change_spouse_name == "Yes" else '' }
     - "spouse_atty_number": ${ '' }
     - "spouse_email": ${ users[1].email if users[1].email_notice and change_spouse_name == "Yes" else '' }
+---
+attachment:
+  variable name: additional_criminal_history[i]
+  name: addendum
+  filename: addendum
+  skip undefined: True
+  editable: False
+  pdf template file: name_change_additional_criminal_history.pdf
+  fields:
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user__1": ${ users[0].name.full(middle="full") }
+    - "user_offense_name_4": ${ users[0].convictions[3].name.text }
+    - "user_conviction_date_4": ${ format_date(users[0].convictions[3].date, format='MM/dd/yyyy') }
+    - "user_sentence_4": ${ users[0].convictions[3].sentence }
+    - "user_sentence_completed_date_4": ${ format_date(users[0].convictions[3].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_4": |
+        % if users[0].convictions[3].name.text != "":
+        % if users[0].convictions[3].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_5": ${ users[0].convictions[4].name.text }
+    - "user_conviction_date_5": ${ format_date(users[0].convictions[4].date, format='MM/dd/yyyy') }
+    - "user_sentence_5": ${ users[0].convictions[4].sentence }
+    - "user_sentence_completed_date_5": ${ format_date(users[0].convictions[4].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_5": |
+        % if users[0].convictions[4].name.text != "":
+        % if users[0].convictions[4].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_6": ${ users[0].convictions[5].name.text }
+    - "user_conviction_date_6": ${ format_date(users[0].convictions[5].date, format='MM/dd/yyyy') }
+    - "user_sentence_6": ${ users[0].convictions[5].sentence }
+    - "user_sentence_completed_date_6": ${ format_date(users[0].convictions[5].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_6": |
+        % if users[0].convictions[5].name.text != "":
+        % if users[0].convictions[5].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_7": ${ users[0].convictions[6].name.text }
+    - "user_conviction_date_7": ${ format_date(users[0].convictions[6].date, format='MM/dd/yyyy') }
+    - "user_sentence_7": ${ users[0].convictions[6].sentence }
+    - "user_sentence_completed_date_7": ${ format_date(users[0].convictions[6].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_7": |
+        % if users[0].convictions[6].name.text != "":
+        % if users[0].convictions[6].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_8": ${ users[0].convictions[7].name.text }
+    - "user_conviction_date_8": ${ format_date(users[0].convictions[7].date, format='MM/dd/yyyy') }
+    - "user_sentence_8": ${ users[0].convictions[7].sentence }
+    - "user_sentence_completed_date_8": ${ format_date(users[0].convictions[7].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_8": |
+        % if users[0].convictions[7].name.text != "":
+        % if users[0].convictions[7].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_9": ${ users[0].convictions[8].name.text }
+    - "user_conviction_date_9": ${ format_date(users[0].convictions[8].date, format='MM/dd/yyyy') }
+    - "user_sentence_9": ${ users[0].convictions[8].sentence }
+    - "user_sentence_completed_date_9": ${ format_date(users[0].convictions[8].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_9": |
+        % if users[0].convictions[8].name.text != "":
+        % if users[0].convictions[8].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_10": ${ users[0].convictions[9].name.text }
+    - "user_conviction_date_10": ${ format_date(users[0].convictions[9].date, format='MM/dd/yyyy') }
+    - "user_sentence_10": ${ users[0].convictions[9].sentence }
+    - "user_sentence_completed_date_10": ${ format_date(users[0].convictions[9].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_10": |
+        % if users[0].convictions[9].name.text != "":
+        % if users[0].convictions[9].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_11": ${ users[0].convictions[10].name.text }
+    - "user_conviction_date_11": ${ format_date(users[0].convictions[10].date, format='MM/dd/yyyy') }
+    - "user_sentence_11": ${ users[0].convictions[10].sentence }
+    - "user_sentence_completed_date_11": ${ format_date(users[0].convictions[10].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_11": |
+        % if users[0].convictions[10].name.text != "":
+        % if users[0].convictions[10].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_12": ${ users[0].convictions[11].name.text }
+    - "user_conviction_date_12": ${ format_date(users[0].convictions[11].date, format='MM/dd/yyyy') }
+    - "user_sentence_12": ${ users[0].convictions[11].sentence }
+    - "user_sentence_completed_date_12": ${ format_date(users[0].convictions[11].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_12": |
+        % if users[0].convictions[11].name.text != "":
+        % if users[0].convictions[11].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_13": ${ users[0].convictions[12].name.text }
+    - "user_conviction_date_13": ${ format_date(users[0].convictions[12].date, format='MM/dd/yyyy') }
+    - "user_sentence_13": ${ users[0].convictions[12].sentence }
+    - "user_sentence_completed_date_13": ${ format_date(users[0].convictions[12].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_13": |
+        % if users[0].convictions[12].name.text != "":
+        % if users[0].convictions[12].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_14": ${ users[0].convictions[13].name.text }
+    - "user_conviction_date_14": ${ format_date(users[0].convictions[13].date, format='MM/dd/yyyy') }
+    - "user_sentence_14": ${ users[0].convictions[13].sentence }
+    - "user_sentence_completed_date_14": ${ format_date(users[0].convictions[13].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_14": |
+        % if users[0].convictions[13].name.text != "":
+        % if users[0].convictions[13].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_15": ${ users[0].convictions[14].name.text }
+    - "user_conviction_date_15": ${ format_date(users[0].convictions[14].date, format='MM/dd/yyyy') }
+    - "user_sentence_15": ${ users[0].convictions[14].sentence }
+    - "user_sentence_completed_date_15": ${ format_date(users[0].convictions[14].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_15": |
+        % if users[0].convictions[14].name.text != "":
+        % if users[0].convictions[14].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_16": ${ users[0].convictions[15].name.text }
+    - "user_conviction_date_16": ${ format_date(users[0].convictions[15].date, format='MM/dd/yyyy') }
+    - "user_sentence_16": ${ users[0].convictions[15].sentence }
+    - "user_sentence_completed_date_16": ${ format_date(users[0].convictions[15].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_16": |
+        % if users[0].convictions[15].name.text != "":
+        % if users[0].convictions[15].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_17": ${ users[0].convictions[16].name.text }
+    - "user_conviction_date_17": ${ format_date(users[0].convictions[16].date, format='MM/dd/yyyy') }
+    - "user_sentence_17": ${ users[0].convictions[16].sentence }
+    - "user_sentence_completed_date_17": ${ format_date(users[0].convictions[16].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_17": |
+        % if users[0].convictions[16].name.text != "":
+        % if users[0].convictions[16].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+
+---
+attachment:
+  variable name: spouse_additional_criminal_history[i]
+  name: spouse_addendum
+  filename: spouse_addendum
+  skip undefined: True
+  editable: False
+  pdf template file: name_change_additional_criminal_history.pdf
+  fields:
+    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "user__1": ${ users[1].name.full(middle="full") }
+    - "user_offense_name_4": ${ users[1].convictions[3].name.text }
+    - "user_conviction_date_4": ${ format_date(users[1].convictions[3].date, format='MM/dd/yyyy') }
+    - "user_sentence_4": ${ users[1].convictions[3].sentence }
+    - "user_sentence_completed_date_4": ${ format_date(users[1].convictions[3].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_4": |
+        % if users[1].convictions[3].name.text != "":
+        % if users[1].convictions[3].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_5": ${ users[1].convictions[4].name.text }
+    - "user_conviction_date_5": ${ format_date(users[1].convictions[4].date, format='MM/dd/yyyy') }
+    - "user_sentence_5": ${ users[1].convictions[4].sentence }
+    - "user_sentence_completed_date_5": ${ format_date(users[1].convictions[4].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_5": |
+        % if users[1].convictions[4].name.text != "":
+        % if users[1].convictions[4].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_6": ${ users[1].convictions[5].name.text }
+    - "user_conviction_date_6": ${ format_date(users[1].convictions[5].date, format='MM/dd/yyyy') }
+    - "user_sentence_6": ${ users[1].convictions[5].sentence }
+    - "user_sentence_completed_date_6": ${ format_date(users[1].convictions[5].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_6": |
+        % if users[1].convictions[5].name.text != "":
+        % if users[1].convictions[5].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_7": ${ users[1].convictions[6].name.text }
+    - "user_conviction_date_7": ${ format_date(users[1].convictions[6].date, format='MM/dd/yyyy') }
+    - "user_sentence_7": ${ users[1].convictions[6].sentence }
+    - "user_sentence_completed_date_7": ${ format_date(users[1].convictions[6].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_7": |
+        % if users[1].convictions[6].name.text != "":
+        % if users[1].convictions[6].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_8": ${ users[1].convictions[7].name.text }
+    - "user_conviction_date_8": ${ format_date(users[1].convictions[7].date, format='MM/dd/yyyy') }
+    - "user_sentence_8": ${ users[1].convictions[7].sentence }
+    - "user_sentence_completed_date_8": ${ format_date(users[1].convictions[7].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_8": |
+        % if users[1].convictions[7].name.text != "":
+        % if users[1].convictions[7].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_9": ${ users[1].convictions[8].name.text }
+    - "user_conviction_date_9": ${ format_date(users[1].convictions[8].date, format='MM/dd/yyyy') }
+    - "user_sentence_9": ${ users[1].convictions[8].sentence }
+    - "user_sentence_completed_date_9": ${ format_date(users[1].convictions[8].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_9": |
+        % if users[1].convictions[8].name.text != "":
+        % if users[1].convictions[8].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_10": ${ users[1].convictions[9].name.text }
+    - "user_conviction_date_10": ${ format_date(users[1].convictions[9].date, format='MM/dd/yyyy') }
+    - "user_sentence_10": ${ users[1].convictions[9].sentence }
+    - "user_sentence_completed_date_10": ${ format_date(users[1].convictions[9].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_10": |
+        % if users[1].convictions[9].name.text != "":
+        % if users[1].convictions[9].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_11": ${ users[1].convictions[10].name.text }
+    - "user_conviction_date_11": ${ format_date(users[1].convictions[10].date, format='MM/dd/yyyy') }
+    - "user_sentence_11": ${ users[1].convictions[10].sentence }
+    - "user_sentence_completed_date_11": ${ format_date(users[1].convictions[10].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_11": |
+        % if users[1].convictions[10].name.text != "":
+        % if users[1].convictions[10].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_12": ${ users[1].convictions[11].name.text }
+    - "user_conviction_date_12": ${ format_date(users[1].convictions[11].date, format='MM/dd/yyyy') }
+    - "user_sentence_12": ${ users[1].convictions[11].sentence }
+    - "user_sentence_completed_date_12": ${ format_date(users[1].convictions[11].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_12": |
+        % if users[1].convictions[11].name.text != "":
+        % if users[1].convictions[11].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_13": ${ users[1].convictions[12].name.text }
+    - "user_conviction_date_13": ${ format_date(users[1].convictions[12].date, format='MM/dd/yyyy') }
+    - "user_sentence_13": ${ users[1].convictions[12].sentence }
+    - "user_sentence_completed_date_13": ${ format_date(users[1].convictions[12].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_13": |
+        % if users[1].convictions[12].name.text != "":
+        % if users[1].convictions[12].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_14": ${ users[1].convictions[13].name.text }
+    - "user_conviction_date_14": ${ format_date(users[1].convictions[13].date, format='MM/dd/yyyy') }
+    - "user_sentence_14": ${ users[1].convictions[13].sentence }
+    - "user_sentence_completed_date_14": ${ format_date(users[1].convictions[13].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_14": |
+        % if users[1].convictions[13].name.text != "":
+        % if users[1].convictions[13].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_15": ${ users[1].convictions[14].name.text }
+    - "user_conviction_date_15": ${ format_date(users[1].convictions[14].date, format='MM/dd/yyyy') }
+    - "user_sentence_15": ${ users[1].convictions[14].sentence }
+    - "user_sentence_completed_date_15": ${ format_date(users[1].convictions[14].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_15": |
+        % if users[1].convictions[14].name.text != "":
+        % if users[1].convictions[14].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_16": ${ users[1].convictions[15].name.text }
+    - "user_conviction_date_16": ${ format_date(users[1].convictions[15].date, format='MM/dd/yyyy') }
+    - "user_sentence_16": ${ users[1].convictions[15].sentence }
+    - "user_sentence_completed_date_16": ${ format_date(users[1].convictions[15].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_16": |
+        % if users[1].convictions[15].name.text != "":
+        % if users[1].convictions[15].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+    - "user_offense_name_17": ${ users[1].convictions[16].name.text }
+    - "user_conviction_date_17": ${ format_date(users[1].convictions[16].date, format='MM/dd/yyyy') }
+    - "user_sentence_17": ${ users[1].convictions[16].sentence }
+    - "user_sentence_completed_date_17": ${ format_date(users[1].convictions[16].completed_date, format='MM/dd/yyyy') }
+    - "user_pardoned_17": |
+        % if users[1].convictions[16].name.text != "":
+        % if users[1].convictions[16].pardoned == True:
+        Yes
+        % else:
+        No
+        % endif
+        % endif
+
+
 ---
 attachment:
   variable name: motion_to_waive_notice[i]
@@ -3261,48 +3645,17 @@ question: |
 subquestion: |
   Edit your answers below.
 review: 
-  - Edit: party_label
+  - Edit:
+    - users[0].birthdate
     button: |
-      **Party label:**
-      ${ party_label }
-  - Edit: users.revisit
-    button: |
-      **Your party: (Edit to change name, lawyer, address, and delivery info)**
-
-      % for my_var in users:
-        * ${ my_var.name.full(middle="full") }
-      % endfor
-  - Edit: anyone_opposing
-    button: |
-      % if party_label == "plaintiff":
-      **Any defendants?**
-      ${word(yesno(anyone_opposing))}
-      % else:
-      **Any respondents?**
-      ${word(yesno(anyone_opposing))}
-      % endif
-    show if: (party_label == 'plaintiff' or party_label == 'petitioner')
-  - Edit: other_parties.revisit
-    button: |
-      **The other party: (Edit to change name, lawyer, address, and delivery info)**
-
-      % for my_var in other_parties:
-        * ${ my_var.name.full(middle="full") }
-      % endfor
-  - Edit: in_re_check
-    button: |
-      **Does the court case have "In re:" in the name?**  
-      ${word(yesno(in_re_check))}
-  - Edit: in_re_label
-    button: |
-      **In re:** ${in_re_label}
-    show if: in_re_check
+      **When were you born?**
+      ${ users[0].birthdate }
   - Edit: 
       - trial_court_index
       - recompute:
         - trial_court
     button: |
-      **County where this case is filed:**
+      **County where you are filing your name change request:**
       ${ trial_court.address.county }
   - Edit: cook_district
     button: |
@@ -3319,159 +3672,12 @@ review:
       ${ "Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview" }
       % elif cook_district == "20":
       ${ "Sixth Municipal District, 16501 South Kedzie Parkway, Markham" }
-      % elif cook_district == "21":
-      ${ "Domestic Violence Court, 555 W. Harrison Street, Chicago" }
-      % elif cook_district == "22":
-      ${ "George N. Leighton Criminal Court Building, 2600 S. California Avenue, Chicago" }
-      % else:
-      ${ "Juvenile Center, 2245 West Ogden Avenue, Chicago" }
       % endif      
     show if: trial_court_index == -1      
-  - Edit: case_number
-    button: |
-      **Case number:**
-      ${ case_number }   
-  - Edit: motion_type
-    button: |
-      **Reason for motion:**
-      ${ motion_type }
-  - Edit: motion_summary
-    button: |
-      **Motion title:**
-      ${ motion_summary }
-    show if: motion_type == "Something else"
-  - Edit: motion_body
-    button: |
-      **Motion text:**
-      ${ motion_body }
-    show if: motion_type == "Something else"
-  - Edit: motion_additional_page
-    button: |
-      **Do you want to add a second page to your motion?**  
-      ${word(yesno(motion_additional_page))}
-    show if: motion_type == "Something else"
-  - Edit: additional_motion_body
-    button: |
-      **Additional motion text:**
-      ${ additional_motion_body }
-    show if: (motion_additional_page and motion_type == "Something else")
-  - Edit: reschedule_date
-    button: |
-      **Original court date on:**
-      ${ reschedule_date } at ${ format_time(reschedule_time, "h:mm a") }
-    show if: motion_type == "Reschedule a court date"
-  - Edit: court_date_reason
-    button: |
-      **Original court date reason:**
-      ${ court_date_reason }
-    show if: motion_type == "Reschedule a court date"
-    
-  - Edit: continue_reason_type
-    button: |
-      **Reschedule for witness, document, evidence, or other:**
-      ${ continue_reason_type }
-    show if: (motion_type == "Reschedule a court date")
-  - Edit: continue_reason_text
-    button: |
-      **You need to reschedule because:**
-      ${ continue_reason_text }
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Other")
-
-  - Edit: witness.name.first
-    button: |
-      **Your witness:**
-      ${ witness.name.full(middle='full') }    
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Witness unavailable")
-  - Edit: know_witness_address
-    button: |
-      **Do you know the witness's address?**
-      ${ word(yesno(know_witness_address)) }    
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Witness unavailable")
-  - Edit: witness.address.address
-    button: |
-      **Witness address:**
-      ${ witness.address.on_one_line(bare=True) }    
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Witness unavailable" and know_witness_address == True)
-  - Edit: no_witness_reason
-    button: |
-      **Why ${ witness.name.full(middle="full") } can't make your court date?**
-      % if no_witness_reason == "location":
-      ${ "I cannot find the witness." }
-      % else:
-      ${ "The witness cannot come to court on that date." }
-      % endif          
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Witness unavailable")
-  - Edit: find_witness_effort
-    button: |
-      **What have you done to try to find the witness?**
-      ${ find_witness_effort }    
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Witness unavailable" and no_witness_reason == "location")
-  - Edit: document_description
-    button: |
-      **Your document:**
-      ${ document_description }    
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Document unavailable")
-  - Edit: evidence_description
-    button: |
-      **Your evidence:**
-      ${ evidence_description }    
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Evidence unavailable")
-    
-  - Edit: evidence_shows
-    button: |
-      **What the evidence will show:**
-      ${ evidence_shows }    
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type != "Other")
-  - Edit: due_diligence_effort
-    button: |
-      % if continue_reason_type == "Witness unavailable":
-      **How did you try to get ${ witness.name.full(middle="full") } to testify on ${ reschedule_date }?**
-      % elif continue_reason_type == "Document unavailable":
-      **How did you try to get the document to court on ${ reschedule_date }?**
-      % else:
-      **How did you try to get the evidence to court on ${ reschedule_date }?**
-      % endif
-      ${ due_diligence_effort }    
-    show if: (motion_type == "Reschedule a court date" and continue_reason_type != "Other")
-
-  - Edit: unfinished_task
-    button: |
-      **What you need more time to do:**
-      ${ unfinished_task }
-    show if: motion_type == "Extend a deadline"    
-  - Edit: current_deadline
-    button: |
-      **Current deadline:**
-      ${ current_deadline }
-    show if: motion_type == "Extend a deadline"    
-  - Edit: new_deadline
-    button: |
-      **New deadline:**
-      ${ new_deadline }
-    show if: motion_type == "Extend a deadline"    
-  - Edit: extension_reason
-    button: |
-      **You need more time because:**
-      ${ extension_reason }
-    show if: motion_type == "Extend a deadline"        
   - Edit: e_signature
     button: |
       **Do you want to add your e-signature to your forms?**
       ${ word(yesno(e_signature)) }
-  - Edit: has_court_date
-    button: |
-      **Do you already have a court date for your motion from the clerk?**
-      ${ word(yesno(has_court_date)) }
-  - Edit: hearing_date
-    button: |
-      **Motion court date on:**
-      ${ hearing_date } at ${ format_time(hearing_time, "h:mm a") }
-    show if: has_court_date
-  - Edit: courtroom
-    button: |
-      **Courtroom:**
-      ${ courtroom }
-    show if: has_court_date
   - Edit: users[0].address.address
     button: |
       **Your address:**
@@ -3791,59 +3997,6 @@ review:
       ${ due_diligence_effort }    
     show if: (motion_type == "Reschedule a court date" and continue_reason_type != "Other")
     
-    
-# replaced with new questions for sep 2023 forms
-#  - Edit: continue_reason_type
-#    button: |
-#      **Reschedule for witness, evidence, or other:**
-#      ${ continue_reason_type }
-#    show if: (motion_type == "Reschedule a court date")
-#  - Edit: continue_reason_text
-#    button: |
-#      **You need to reschedule because:**
-#      ${ continue_reason_text }
-#    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Other")
-#
-#  - Edit: witness.name.first
-#    button: |
-#      **Your witness:**
-#      ${ witness.name.full(middle='full') }    
-#    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Witness unavailable")
-#  - Edit: know_witness_address
-#    button: |
-#      **Do you know the witness's address?**
-#      ${ word(yesno(know_witness_address)) }    
-#    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Witness unavailable")
-#  - Edit: witness.address.address
-#    button: |
-#      **Witness address:**
-#      ${ witness.address.on_one_line(bare=True) }    
-#    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Witness unavailable" and know_witness_address == True)
-#  - Edit: due_diligence_effort
-#    button: |
-#      % if know_witness_address:
-#      **How you used due diligence to get the witness:**
-#      % else:
-#      **How you used due diligence to find the witness:**
-#      % endif
-#      ${ due_diligence_effort }    
-#    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Witness unavailable")
-#    
-#  - Edit: evidence_description
-#    button: |
-#      **Your evidence:**
-#      ${ evidence_description }    
-#    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Evidence unavailable")
-#  - Edit: due_diligence_effort
-#    button: |
-#      **How you used due diligence to get the evidence:**
-#      ${ due_diligence_effort }    
-#    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Evidence unavailable")
-#  - Edit: evidence_shows
-#    button: |
-#      **What the evidence will show:**
-#      ${ evidence_shows }    
-#    show if: (motion_type == "Reschedule a court date" and continue_reason_type == "Evidence unavailable")
     
   - Edit: unfinished_task
     button: |
