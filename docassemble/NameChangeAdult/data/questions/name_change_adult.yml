@@ -106,7 +106,7 @@ code: |
             spouse_registry_kickout
             spouse_registry_eligibility_check
           else:
-            if users[1].registry and users[1].any_true():
+            if users[1].registry and users[1].registry_exceptions.any_true():
               registry_notification
             users[1].id_theft
             if users[1].felonies or users[1].registry or users[1].id_theft:
@@ -170,7 +170,7 @@ question: |
 subquestion: |
   Welcome to Illinois Legal Aid Online's **Name change for an adult** Easy Form.
 
-  You can use this program to request a legal name change in Illinois. If you have a spouse, they can request a name change at the same time on your forms.
+  This program helps you make the forms to request a legal name change in Illinois. If you have a spouse, they can request a name change at the same time on your forms.
   
   To learn more, read ILAO's article about [**Name change basics**](https://www.illinoislegalaid.org/node/29921).
 field: sees_nav_bar
@@ -290,7 +290,7 @@ id: user continuous illinois residence
 question: |
   Have you lived in Illinois for the past 6 months?
 subquestion: |
-  Answering **Yes** means that you have lived in Illinois without taking a break to live in another state or country.
+  Answering **Yes** means that you have lived in Illinois for 6 months without taking a break to live in another state or country.
 fields:
   - no label: users[0].is_resident
     datatype: yesnoradio
@@ -301,6 +301,7 @@ question: |
 fields:
   - Lived in Illinois since: users[0].resident_date
     datatype: BirthDate
+    alMin: ${ users[0].birthdate.format("yyyy-MM-dd") }
     alMax: ${ today().format("yyyy-MM-dd") }
 ---
 id: spouse continuous illinois residence
@@ -340,8 +341,10 @@ question: |
   Sorry
 subquestion: |
   This program is only for people who have lived in Illinois continuously for 6 months.
-  
-  You can use the [**Legal Services Corporation website**](https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help) to find a legal aid organization near you.
+
+  Click **Back** if you made a mistake. Or you can talk with a lawyer to discuss your options. 
+
+  You can use the [**Legal Services Corporation website**](https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help) to find a legal aid organization in another state. Or you can use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
 buttons:
   - Exit: exit
   - Restart: restart
@@ -353,7 +356,7 @@ question: |
 subquestion: |
   Your spouse must have lived in Illinois continuously for 6 months.
   
-  This program cannot make name change forms for your spouse. You can talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
+  This program cannot make name change forms for your spouse. You can talk with a lawyer to discuss your options. You can use the [**Legal Services Corporation website**](https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help) to find a legal aid organization in another state. Or you can use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
   
   Click **Back** if you made a mistake or click **Next** to make the forms for your name change.
 ---
@@ -527,6 +530,8 @@ subquestion: |
   % else:
     To request a name change for a child, you must tell the court about any criminal history the child may have.
   % endif
+  
+  Having any criminal history does not prevent a person from getting a legal name change. Only certain offenses can affect the name change request. The next screens will guide you through the process.
 ---
 id: pending arrests
 generic object: ALPeopleList
@@ -793,13 +798,17 @@ id: conviction details
 generic object: ALPeopleList
 question: |
   % if j == 0:
-  Conviction details
+  Conviction or probation details
   % else:
-  More conviction details
+  More conviction or probation details
   % endif
 subquestion: |
   % if interview_type == 'adult':
-  For any of the following convictions or probations, you must enter more information on your name change request:
+    % if i == 0:
+    For any of the following convictions or probations, you must enter more information on your name change request:
+    % else:
+    For any of the following convictions or probations, you must enter more information on your spouse's name change request:
+    % endif
   % else:
   For any of the following convictions or probations of ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}), you must enter more information:
   % endif
@@ -826,15 +835,22 @@ fields:
     max: ${ today().format("yyyy-MM-dd") }
   - Pardoned?: x[i].convictions[j].pardoned
     datatype: yesnoradio
+validation code: |
+  if x[i].convictions[j].completed_date < x[i].convictions[j].date:
+    validation_error("Date sentence completed must be on or after date of conviction or probation. Please adjust your answers.", field="x[i].convictions[j].completed_date")
 
 ---
 id: any other convictions
 generic object: ALPeopleList
 question: |
-  Are there other convictions?
+  Are there other convictions or probations?
 subquestion: |
   % if interview_type == 'adult':
-  For these convictions or probations, you must enter more information on your name change request:
+    % if i == 0:
+    For any of the following convictions or probations, you must enter more information on your name change request:
+    % else:
+    For any of the following convictions or probations, you must enter more information on your spouse's name change request:
+    % endif
   % else:
   For these convictions or probations of ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}), you must enter more information on your name change request:
   % endif
@@ -849,7 +865,11 @@ subquestion: |
    * Identification theft or Aggravated identity theft
   % endif
   
-  You can enter up to 17 convictions in total. So far you have told us about:
+  % if x[i].convictions.number() == 1:
+  You can enter up to 17 convictions or probations in total. So far you have told us about ${ x[i].convictions.number() } offense:
+  % else:
+  You can enter up to 17 convictions or probations in total. So far you have told us about ${ x[i].convictions.number() } offenses:
+  % endif
   
   % for conviction in x[i].convictions:
    * ${conviction.name.text} on ${conviction.date}
@@ -987,7 +1007,7 @@ fields:
   - Notice and publication would be a hardship because (optional):: hardship_text
     input type: area
     rows: 10
-    maxlength: 750
+    maxlength: 500
     required: False
 ---
 template: child_notice_waiver_example
@@ -1412,16 +1432,6 @@ objects:
   - publication_notice: ALDocument.using(title="Publication Notice", filename="publication_notice.pdf", has_addendum=False)
   - publication_notice_spouse: ALDocument.using(title="Publication Notice for spouse", filename="publication_notice_spouse.pdf", has_addendum=False)
 
-
-  - motion_additional_delivery: ALDocument.using(title="Additional Proof of Delivery", filename="motion_additional_proof_delivery.pdf", has_addendum=False)
-  - motion_additional_delivery_2: ALDocument.using(title="Additional Proof of Delivery 2", filename="appearance_additional_proof_delivery_2.pdf", has_addendum=False)
-  - motion_additional_delivery_3: ALDocument.using(title="Additional Proof of Delivery 3", filename="appearance_additional_proof_delivery_3.pdf", has_addendum=False)
-  - motion_additional_delivery_blank: ALDocument.using(title="Additional Proof of Delivery (blank)", filename="motion_additional_proof_delivery_blank.pdf", has_addendum=False)
-  - notice_attachment: ALDocument.using(title="Notice of Court Date for Motion", filename="notice_of_court_date.pdf", has_addendum=False)
-  - motion_continue_instructions: ALDocument.using(title="Instructions", filename="instructions.pdf", has_addendum=False)
-  - statement_attachment: ALDocument.using(title="Statement of Missing Evidence or Witness", filename="statement.pdf", has_addendum=False)
-  - motion_continue_order: ALDocument.using(title="Order", filename="order.pdf", has_addendum=False)
-  
 ---
 code: |
   instructions.enabled = True
@@ -1451,6 +1461,8 @@ code: |
   if users[0].after_divorce == False:
     if request_waiver == False:
       publication_notice.enabled = True
+      
+    # should we add "and request_waiver == False" to this?  
     if change_spouse_name == "Yes":
       publication_notice_spouse.enabled = True
 
@@ -2258,6 +2270,9 @@ review:
     button: |
       **Does your spouse want to change their name?**
       ${ showifdef('change_spouse_name') }
+      &nbsp;
+      
+      **Note:** If you want to change this answer, the program works best if you start over.
 
   - Edit: 
       - users[1].name.first
@@ -2689,6 +2704,9 @@ review:
     button: |
       **Does your spouse want to change their name?**
       ${ showifdef('change_spouse_name') }
+      &nbsp;
+      
+      **Note:** If you want to change this answer, the program works best if you start over.
 ---
 id: about your spouse review screen
 section: About your spouse (optional)
@@ -2703,6 +2721,9 @@ review:
     button: |
       **Does your spouse want to change their name?**
       ${ showifdef('change_spouse_name') }
+      &nbsp;
+      
+      **Note:** If you want to change this answer, the program works best if you start over.
   - Edit: 
       - users[1].name.first
     button: |
