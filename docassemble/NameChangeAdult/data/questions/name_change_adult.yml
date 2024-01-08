@@ -236,9 +236,10 @@ fields:
       is: True
     code: |
       states_list() 
-  - County (if applicable), and State or province: users[0].birthplace.intl_text
+  - County and State or Province (separated by a comma): users[0].birthplace.intl_text
     help: |
-      List the county (if applicable) and list the state or province, separated by a comma.
+      List the county and list the state or province if the country has them.
+    required: False
     show if: 
       variable: users[0].in_america
       is: False
@@ -274,9 +275,10 @@ fields:
       is: True
     code: |
       states_list() 
-  - County (if applicable), and State or province: users[1].birthplace.intl_text
+  - County and State or Province (separated by a comma): users[1].birthplace.intl_text
     help: |
-      List the county (if applicable) and list the state or province, separated by a comma.
+      List the county and list the state or province if the country has them.
+    required: False
     show if: 
       variable: users[1].in_america
       is: False
@@ -319,6 +321,7 @@ question: |
 fields:
   - Lived in Illinois since: users[1].resident_date
     datatype: BirthDate
+    alMin: ${ users[1].birthdate.format("yyyy-MM-dd") }
     alMax: ${ today().format("yyyy-MM-dd") }
 
 ---
@@ -479,8 +482,9 @@ subquestion: |
 fields:
   - Date of divorce judgment: divorce_date
     datatype: date
+    min: ${ users[0].birthdate.format("yyyy-MM-dd") }
     max: ${ today().format("yyyy-MM-dd") }
-  - Was the court that ordered the divorce in the United states?: divorce_in_us
+  - Was the court that ordered the divorce in the United States?: divorce_in_us
     datatype: yesnoradio
   - County: divorce_location.county
     show if:
@@ -1492,7 +1496,7 @@ attachment:
   editable: False
   pdf template file: name_change_request.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "trial_court_county": ${ trial_court.address.county }
     - "user__1": ${ users[0].name.full(middle="full") }
     - "user_name_first": ${ users[0].name.first }
     - "user_name_middle": ${ users[0].name.middle }
@@ -1535,36 +1539,36 @@ attachment:
     - "user_registry_exception_gender": ${ True if users[0].registry == True and users[0].registry_exceptions['Gender-related identity'] == True else '' }
     - "user_id_theft_yes": ${ True if users[0].id_theft == True else '' }
     - "user_id_theft_no": ${ True if users[0].id_theft == False else '' }
-    - "user_offense_name_1": ${ users[0].convictions[0].name.text }
-    - "user_conviction_date_1": ${ format_date(users[0].convictions[0].date, format='MM/dd/yyyy') }
-    - "user_sentence_1": ${ users[0].convictions[0].sentence }
-    - "user_sentence_completed_date_1": ${ format_date(users[0].convictions[0].completed_date, format='MM/dd/yyyy') }
+    - "user_offense_name_1": ${ users[0].convictions[0].name.text if users[0].felonies or users[0].registry or users[0].id_theft else ''  }
+    - "user_conviction_date_1": ${ format_date(users[0].convictions[0].date, format='MM/dd/yyyy') if users[0].felonies or users[0].registry or users[0].id_theft else '' }
+    - "user_sentence_1": ${ users[0].convictions[0].sentence if users[0].felonies or users[0].registry or users[0].id_theft else '' }
+    - "user_sentence_completed_date_1": ${ format_date(users[0].convictions[0].completed_date, format='MM/dd/yyyy') if users[0].felonies or users[0].registry or users[0].id_theft else '' }
     - "user_pardoned_1": |
-        % if users[0].convictions[0].name.text != "":
+        % if (users[0].felonies or users[0].registry or users[0].id_theft) and users[0].convictions[0].name.text != "":
         % if users[0].convictions[0].pardoned == True:
         Yes
         % else:
         No
         % endif
         % endif
-    - "user_offense_name_2": ${ users[0].convictions[1].name.text }
-    - "user_conviction_date_2": ${ format_date(users[0].convictions[1].date, format='MM/dd/yyyy') }
-    - "user_sentence_2": ${ users[0].convictions[1].sentence }
-    - "user_sentence_completed_date_2": ${ format_date(users[0].convictions[1].completed_date, format='MM/dd/yyyy') }
+    - "user_offense_name_2": ${ users[0].convictions[1].name.text if users[0].felonies or users[0].registry or users[0].id_theft else '' }
+    - "user_conviction_date_2": ${ format_date(users[0].convictions[1].date, format='MM/dd/yyyy') if users[0].felonies or users[0].registry or users[0].id_theft else '' }
+    - "user_sentence_2": ${ users[0].convictions[1].sentence if users[0].felonies or users[0].registry or users[0].id_theft else '' }
+    - "user_sentence_completed_date_2": ${ format_date(users[0].convictions[1].completed_date, format='MM/dd/yyyy') if users[0].felonies or users[0].registry or users[0].id_theft else '' }
     - "user_pardoned_2": |
-        % if users[0].convictions[1].name.text != "":
+        % if (users[0].felonies or users[0].registry or users[0].id_theft) and users[0].convictions[1].name.text != "":
         % if users[0].convictions[1].pardoned == True:
         Yes
         % else:
         No
         % endif
         % endif
-    - "user_offense_name_3": ${ users[0].convictions[2].name.text }
-    - "user_conviction_date_3": ${ format_date(users[0].convictions[2].date, format='MM/dd/yyyy') }
-    - "user_sentence_3": ${ users[0].convictions[2].sentence }
-    - "user_sentence_completed_date_3": ${ format_date(users[0].convictions[2].completed_date, format='MM/dd/yyyy') }
+    - "user_offense_name_3": ${ users[0].convictions[2].name.text if users[0].felonies or users[0].registry or users[0].id_theft else '' }
+    - "user_conviction_date_3": ${ format_date(users[0].convictions[2].date, format='MM/dd/yyyy') if users[0].felonies or users[0].registry or users[0].id_theft else '' }
+    - "user_sentence_3": ${ users[0].convictions[2].sentence if users[0].felonies or users[0].registry or users[0].id_theft else '' }
+    - "user_sentence_completed_date_3": ${ format_date(users[0].convictions[2].completed_date, format='MM/dd/yyyy') if users[0].felonies or users[0].registry or users[0].id_theft else '' }
     - "user_pardoned_3": |
-        % if users[0].convictions[2].name.text != "":
+        % if (users[0].felonies or users[0].registry or users[0].id_theft) and users[0].convictions[2].name.text != "":
         % if users[0].convictions[2].pardoned == True:
         Yes
         % else:
@@ -1607,36 +1611,36 @@ attachment:
     - "spouse_registry_exception_gender": ${ True if users[1].registry == True and users[1].registry_exceptions['Gender-related identity'] == True and change_spouse_name == "Yes" else '' }
     - "spouse_id_theft_yes": ${ True if users[1].id_theft == True and change_spouse_name == "Yes" else '' }
     - "spouse_id_theft_no": ${ True if users[1].id_theft == False and change_spouse_name == "Yes" else '' }
-    - "spouse_offense_name_1": ${ users[1].convictions[0].name.text }
-    - "spouse_conviction_date_1": ${ format_date(users[1].convictions[0].date, format='MM/dd/yyyy') }
-    - "spouse_sentence_1": ${ users[1].convictions[0].sentence }
-    - "spouse_sentence_completed_date_1": ${ format_date(users[1].convictions[0].completed_date, format='MM/dd/yyyy') }
+    - "spouse_offense_name_1": ${ users[1].convictions[0].name.text if users[1].felonies or users[1].registry or users[1].id_theft else ''}
+    - "spouse_conviction_date_1": ${ format_date(users[1].convictions[0].date, format='MM/dd/yyyy') if users[1].felonies or users[1].registry or users[1].id_theft else '' }
+    - "spouse_sentence_1": ${ users[1].convictions[0].sentence if users[1].felonies or users[1].registry or users[1].id_theft else '' }
+    - "spouse_sentence_completed_date_1": ${ format_date(users[1].convictions[0].completed_date, format='MM/dd/yyyy') if users[1].felonies or users[1].registry or users[1].id_theft else '' }
     - "spouse_pardoned_1": |
-        % if users[1].convictions[0].name.text != "":
+        % if (users[1].felonies or users[1].registry or users[1].id_theft) and users[1].convictions[0].name.text != "":
         % if users[1].convictions[0].pardoned == True:
         Yes
         % else:
         No
         % endif
         % endif
-    - "spouse_offense_name_2": ${ users[1].convictions[1].name.text }
-    - "spouse_conviction_date_2": ${ format_date(users[1].convictions[1].date, format='MM/dd/yyyy') }
-    - "spouse_sentence_2": ${ users[1].convictions[1].sentence }
-    - "spouse_sentence_completed_date_2": ${ format_date(users[1].convictions[1].completed_date, format='MM/dd/yyyy') }
+    - "spouse_offense_name_2": ${ users[1].convictions[1].name.text if users[1].felonies or users[1].registry or users[1].id_theft else '' }
+    - "spouse_conviction_date_2": ${ format_date(users[1].convictions[1].date, format='MM/dd/yyyy') if users[1].felonies or users[1].registry or users[1].id_theft else '' }
+    - "spouse_sentence_2": ${ users[1].convictions[1].sentence if users[1].felonies or users[1].registry or users[1].id_theft else '' }
+    - "spouse_sentence_completed_date_2": ${ format_date(users[1].convictions[1].completed_date, format='MM/dd/yyyy') if users[1].felonies or users[1].registry or users[1].id_theft else '' }
     - "spouse_pardoned_2": |
-        % if users[1].convictions[1].name.text != "":
+        % if (users[1].felonies or users[1].registry or users[1].id_theft) and users[1].convictions[1].name.text != "":
         % if users[1].convictions[1].pardoned == True:
         Yes
         % else:
         No
         % endif
         % endif
-    - "spouse_offense_name_3": ${ users[1].convictions[2].name.text }
-    - "spouse_conviction_date_3": ${ format_date(users[1].convictions[2].date, format='MM/dd/yyyy') }
-    - "spouse_sentence_3": ${ users[1].convictions[2].sentence }
-    - "spouse_sentence_completed_date_3": ${ format_date(users[1].convictions[2].completed_date, format='MM/dd/yyyy') }
+    - "spouse_offense_name_3": ${ users[1].convictions[2].name.text if users[1].felonies or users[1].registry or users[1].id_theft else '' }
+    - "spouse_conviction_date_3": ${ format_date(users[1].convictions[2].date, format='MM/dd/yyyy') if users[1].felonies or users[1].registry or users[1].id_theft else '' }
+    - "spouse_sentence_3": ${ users[1].convictions[2].sentence if users[1].felonies or users[1].registry or users[1].id_theft else '' }
+    - "spouse_sentence_completed_date_3": ${ format_date(users[1].convictions[2].completed_date, format='MM/dd/yyyy') if users[1].felonies or users[1].registry or users[1].id_theft else '' }
     - "spouse_pardoned_3": |
-        % if users[1].convictions[2].name.text != "":
+        % if (users[1].felonies or users[1].registry or users[1].id_theft) and users[1].convictions[2].name.text != "":
         % if users[1].convictions[2].pardoned == True:
         Yes
         % else:
@@ -1665,7 +1669,7 @@ attachment:
   editable: False
   pdf template file: name_change_additional_criminal_history.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "trial_court_county": ${ trial_court.address.county }
     - "user__1": ${ users[0].name.full(middle="full") }
     - "user_offense_name_4": ${ users[0].convictions[3].name.text }
     - "user_conviction_date_4": ${ format_date(users[0].convictions[3].date, format='MM/dd/yyyy') }
@@ -1845,7 +1849,7 @@ attachment:
   editable: False
   pdf template file: name_change_additional_criminal_history.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "trial_court_county": ${ trial_court.address.county }
     - "user__1": ${ users[1].name.full(middle="full") }
     - "user_offense_name_4": ${ users[1].convictions[3].name.text }
     - "user_conviction_date_4": ${ format_date(users[1].convictions[3].date, format='MM/dd/yyyy') }
@@ -2026,7 +2030,7 @@ attachment:
   editable: False
   pdf template file: motion_to_waive_notice.pdf
   fields:      
-    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "trial_court_county": ${ trial_court.address.county }
     - "user__1": ${ users[0].name.full(middle="full") }
     - "waiver_order_cb": ${ True if waiver_reason['order'] == True else '' }
     - "protective_order_op": ${ True if protective_order['op'] == True else '' }
@@ -2067,7 +2071,7 @@ attachment:
   editable: True
   pdf template file: publication_notice.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "trial_court_county": ${ trial_court.address.county }
     - "user__1": ${ users[0].name.full(middle="full") }
     - "user_name_first": ${ users[0].name.first }
     - "user_name_middle": ${ users[0].name.middle }
@@ -2094,7 +2098,7 @@ attachment:
   editable: False
   pdf template file: publication_notice.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "trial_court_county": ${ trial_court.address.county }
     - "user__1": ${ users[1].name.full(middle="full") }
     - "user_name_first": ${ users[1].name.first }
     - "user_name_middle": ${ users[1].name.middle }
@@ -2121,7 +2125,7 @@ attachment:
   editable: False
   pdf template file: name_change_order.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "trial_court_county": ${ trial_court.address.county }
     - "user": ${ users[0].name.full(middle="full") }
 ---
 attachment:
@@ -2132,7 +2136,7 @@ attachment:
   editable: False
   pdf template file: order_to_waive_notice.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county.upper() }
+    - "trial_court_county": ${ trial_court.address.county }
     - "user": ${ users[0].name.full(middle="full") }
 
 
@@ -2167,7 +2171,11 @@ review:
       % if users[0].in_america:
       ${ users[0].birthplace.city }, ${ users[0].birthplace.county }, ${ users[0].birthplace.state }, US
       % else:
-      ${ users[0].birthplace.city }, ${ users[0].birthplace.county }, ${ users[0].birthplace.country }
+      % if users[0].birthplace.intl_text != "":
+      ${ users[0].birthplace.city }, ${ users[0].birthplace.intl_text}, ${users[0].birthplace.country}
+      % else:
+      ${ users[0].birthplace.city }, ${users[0].birthplace.country}        
+      % endif
       % endif
   - Edit: 
       - users[0].is_resident
@@ -2299,7 +2307,11 @@ review:
       % if users[1].in_america:
       ${ users[1].birthplace.city }, ${ users[1].birthplace.county }, ${ users[1].birthplace.state }, US
       % else:
-      ${ users[1].birthplace.city }, ${ users[1].birthplace.county }, ${ users[1].birthplace.country }
+      % if users[1].birthplace.intl_text != "":
+      ${ users[1].birthplace.city }, ${ users[1].birthplace.intl_text}, ${users[1].birthplace.country}
+      % else:
+      ${ users[1].birthplace.city }, ${users[1].birthplace.country}        
+      % endif
       % endif
     show if: change_spouse_name == 'Yes'
   - Edit: 
@@ -2596,7 +2608,11 @@ review:
       % if users[0].in_america:
       ${ users[0].birthplace.city }, ${ users[0].birthplace.county }, ${ users[0].birthplace.state }, US
       % else:
-      ${ users[0].birthplace.city }, ${ users[0].birthplace.county }, ${ users[0].birthplace.country }
+      % if users[0].birthplace.intl_text != "":
+      ${ users[0].birthplace.city }, ${ users[0].birthplace.intl_text}, ${users[0].birthplace.country}
+      % else:
+      ${ users[0].birthplace.city }, ${users[0].birthplace.country}        
+      % endif
       % endif
   - Edit: 
       - users[0].is_resident
@@ -2749,7 +2765,11 @@ review:
       % if users[1].in_america:
       ${ users[1].birthplace.city }, ${ users[1].birthplace.county }, ${ users[1].birthplace.state }, US
       % else:
-      ${ users[1].birthplace.city }, ${ users[1].birthplace.county }, ${ users[1].birthplace.country }
+      % if users[1].birthplace.intl_text != "":
+      ${ users[1].birthplace.city }, ${ users[1].birthplace.intl_text}, ${users[1].birthplace.country}
+      % else:
+      ${ users[1].birthplace.city }, ${users[1].birthplace.country}        
+      % endif      
       % endif
     show if: change_spouse_name == 'Yes'
   - Edit: 
