@@ -434,8 +434,6 @@ subquestion: |
 fields:
   - code: |
       users[1].name_fields()
-
-
 ---
 id: your new name
 sets:
@@ -1500,11 +1498,20 @@ attachment:
     - "user__1": ${ users[0].name.full(middle="full") }
     - "user_name_first": ${ users[0].name.first }
     - "user_name_middle": ${ users[0].name.middle }
-    - "user_name_last": ${ users[0].name.last }
+    - "user_name_last": |
+        % if users[0].name.suffix == "":
+        ${ users[0].name.last }
+        % else:
+        ${ users[0].name.last }, ${ users[0].name.suffix }
+        % endif        
     - "user_name_first_new": ${ users[0].new.name.first }
     - "user_name_middle_new": ${ users[0].new.name.middle }
-    - "user_name_last_new": ${ users[0].new.name.last }
-    - "user_resident_date": ${ users[0].resident_date }
+    - "user_name_last_new": |
+        % if users[0].new.name.suffix == "":
+        ${ users[0].new.name.last }
+        % else:
+        ${ users[0].new.name.last }, ${ users[0].new.name.suffix }
+        % endif            - "user_resident_date": ${ users[0].resident_date }
     - "user_dob": ${ users[0].birthdate }
     - "user_birth_place": |
         % if users[0].in_america:
@@ -1575,13 +1582,22 @@ attachment:
         No
         % endif
         % endif
-
     - "spouse_name_first": ${ users[1].name.first if change_spouse_name == "Yes" else '' }
     - "spouse_name_middle": ${ users[1].name.middle if change_spouse_name == "Yes" else '' }
-    - "spouse_name_last": ${ users[1].name.last if change_spouse_name == "Yes" else '' }
+    - "spouse_name_last": |
+        % if change_spouse_name == "Yes" and users[1].name.suffix == "":
+        ${ users[1].name.last }
+        % elif change_spouse_name == "Yes":
+        ${ users[1].name.last }, ${ users[1].name.suffix }
+        % endif        
     - "spouse_name_first_new": ${ users[1].new.name.first if change_spouse_name == "Yes" else '' }
     - "spouse_name_middle_new": ${ users[1].new.name.middle if change_spouse_name == "Yes" else '' }
-    - "spouse_name_last_new": ${ users[1].new.name.last if change_spouse_name == "Yes" else '' }
+    - "spouse_name_last_new": |
+        % if change_spouse_name == "Yes" and users[1].new.name.suffix == "":
+        ${ users[1].new.name.last }
+        % elif change_spouse_name == "Yes":
+        ${ users[1].new.name.last }, ${ users[1].new.name.suffix }
+        % endif        
     - "spouse_resident_date": ${ users[1].resident_date if change_spouse_name == "Yes" else '' }
     - "spouse_dob": ${ users[1].birthdate if change_spouse_name == "Yes" else '' }
     - "spouse_birth_place": |
@@ -2075,10 +2091,22 @@ attachment:
     - "user__1": ${ users[0].name.full(middle="full") }
     - "user_name_first": ${ users[0].name.first }
     - "user_name_middle": ${ users[0].name.middle }
-    - "user_name_last": ${ users[0].name.last }
+    - "user_name_last": |
+        % if users[0].name.suffix == "":
+        ${ users[0].name.last }
+        % else:
+        ${ users[0].name.last }, ${ users[0].name.suffix }
+        % endif            
+    - "user_resident_date": ${ users[0].resident_date }
     - "user_name_first_new": ${ users[0].new.name.first }
     - "user_name_middle_new": ${ users[0].new.name.middle }
-    - "user_name_last_new": ${ users[0].new.name.last }
+    - "user_name_last_new": |
+        % if users[0].new.name.suffix == "":
+        ${ users[0].new.name.last }
+        % else:
+        ${ users[0].new.name.last }, ${ users[0].new.name.suffix }
+        % endif            
+    - "user_resident_date": ${ users[0].resident_date }
     - "courthouse_address": ${ courthouse_info }
     - "clerk_phone": ${ trial_court.phone }
     - "clerk_website": ${ trial_court.website }
@@ -2102,10 +2130,20 @@ attachment:
     - "user__1": ${ users[1].name.full(middle="full") }
     - "user_name_first": ${ users[1].name.first }
     - "user_name_middle": ${ users[1].name.middle }
-    - "user_name_last": ${ users[1].name.last }
+    - "user_name_last": |
+        % if users[1].name.suffix == "":
+        ${ users[1].name.last }
+        % else:
+        ${ users[1].name.last }, ${ users[1].new.name.suffix }
+        % endif            
     - "user_name_first_new": ${ users[1].new.name.first }
     - "user_name_middle_new": ${ users[1].new.name.middle }
-    - "user_name_last_new": ${ users[1].new.name.last }
+    - "user_name_last_new": |
+        % if users[1].new.name.suffix == "":
+        ${ users[1].new.name.last }
+        % else:
+        ${ users[1].new.name.last }, ${ users[0].new.name.suffix }
+        % endif            
     - "courthouse_address": ${ courthouse_info }
     - "clerk_phone": ${ trial_court.phone }
     - "clerk_website": ${ trial_court.website }
