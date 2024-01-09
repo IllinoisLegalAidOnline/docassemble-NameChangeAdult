@@ -18,6 +18,7 @@ objects:
   - divorce_location: ALAddress
   - users[i].convictions: DAList.using(object_type=Thing, there_are_any=True)
   - orders: DAList.using(object_type=Thing, complete_attribute='complete', there_are_any=True)
+  - spouse_orders: DAList.using(object_type=Thing, complete_attribute='complete', there_are_any=True)
   - court_list: ALCourtLoader.using(file_name='docassemble.ILAO:data/sources/il_courts.xlsx')
 ---
 code: |
@@ -121,18 +122,30 @@ code: |
   nav.set_section('section_notice')
   notice_intro
   if users[0].after_divorce == True:
-    divorce_location.state
-  if users[0].after_divorce == False or change_spouse_name == "Yes": # publication may be required
+    divorce_date
+  if users[0].after_divorce == False:
     if request_waiver == True:
       if waiver_reason['order'] == True:
         if protective_order.any_true():
           orders.gather()
       hardship_text
 
+  if change_spouse_name == "Yes":
+    if spouse_request_waiver == True:
+      if spouse_waiver_reason['order'] == True:
+        if spouse_protective_order.any_true():
+          spouse_orders.gather()
+      spouse_hardship_text
+
   if users[0].after_divorce == False:
     if request_waiver == False:
       publication_intro
-      publication_placeholder
+      complete_publication_notice
+
+  if change_spouse_name == "Yes":
+    if spouse_request_waiver == False:
+      publication_intro
+      complete_publication_notice
 
   # IF PUBLICATION do we want to ask if they already have hearing information from court clerk? date, time, in person (courtroom) or remote (phone, website, log-in information). 
   # do you know this now?
@@ -154,6 +167,7 @@ code: |
     users[0].email
   e_signature
   if change_spouse_name == "Yes":
+    spouse_hide_address
     users[1].address.address
     users[1].phone_number
     if users[1].email_notice == True:
@@ -319,7 +333,7 @@ id: spouse resident date
 question: |
   When did your spouse start living in Illinois?
 fields:
-  - Lived in Illinois since: users[1].resident_date
+  - Spouse lived in Illinois since: users[1].resident_date
     datatype: BirthDate
     alMin: ${ users[1].birthdate.format("yyyy-MM-dd") }
     alMax: ${ today().format("yyyy-MM-dd") }
@@ -404,11 +418,6 @@ code: |
   spouse_adult_check = True
 ---
 id: your current legal name
-sets:
-    - users[0].name.first
-    - users[0].name.last
-    - users[0].name.middle
-    - users[0].name.suffix
 question:  |
   What is your current legal name?
 subquestion: |
@@ -416,15 +425,17 @@ subquestion: |
 
   You can enter your new name on the next screen.
 fields:
-  - code: |
-      users[0].name_fields()
+  - First name: users[0].name.first
+  - Middle name: users[0].name.middle
+    required: False
+  - Last name: users[0].name.last
+    required: False
+  - Suffix: users[0].name.suffix
+    code: |
+      name_suffix()
+    required: False  
 ---
 id: your spouse's current legal name
-sets:
-    - users[1].name.first
-    - users[1].name.last
-    - users[1].name.middle
-    - users[1].name.suffix
 question:  |
   What is your spouse's current legal name?
 subquestion: |
@@ -432,34 +443,43 @@ subquestion: |
 
   You can enter your spouse's new name on the next screen.
 fields:
-  - code: |
-      users[1].name_fields()
+  - First name: users[1].name.first
+  - Middle name: users[1].name.middle
+    required: False
+  - Last name: users[1].name.last
+    required: False
+  - Suffix: users[1].name.suffix
+    code: |
+      name_suffix()
+    required: False  
 ---
 id: your new name
-sets:
-    - users[0].new.name.first
-    - users[0].new.name.last
-    - users[0].new.name.middle
-    - users[0].new.name.suffix
 question:  |
   What do you want your name to be changed to?
 fields:
-  - code: |
-      users[0].new.name_fields()
+  - First name: users[0].new.name.first
+  - Middle name: users[0].new.name.middle
+    required: False
+  - Last name: users[0].new.name.last
+    required: False
+  - Suffix: users[0].new.name.suffix
+    code: |
+      name_suffix()
+    required: False  
 ---
 id: your spouse's new name
-sets:
-    - users[1].new.name.first
-    - users[1].new.name.last
-    - users[1].new.name.middle
-    - users[1].new.name.suffix
 question:  |
   What does your spouse want their name to be changed to?
 fields:
-  - code: |
-      users[1].new.name_fields()
-
-
+  - First name: users[1].new.name.first
+  - Middle name: users[1].new.name.middle
+    required: False
+  - Last name: users[1].new.name.last
+    required: False
+  - Suffix: users[1].new.name.suffix
+    code: |
+      name_suffix()
+    required: False  
 ---
 id: name change after divorce
 question: |
@@ -485,6 +505,7 @@ fields:
   - Was the court that ordered the divorce in the United States?: divorce_in_us
     datatype: yesnoradio
   - County: divorce_location.county
+    maxlength: 30
     show if:
       variable: divorce_in_us
       is: True
@@ -494,12 +515,11 @@ fields:
     show if:
       variable: divorce_in_us
       is: True
-  - County (enter the city if there is no county): divorce_location.county
-    show if:
-      variable: divorce_in_us
-      is: False
-  - State or province: divorce_location.state
-    show if:
+  - County and State or Province (separated by a comma): divorce_location.intl_text
+    help: |
+      List the county and list the state or province if the country has them. If there is no county, list the city.
+    maxlength: 30
+    show if: 
       variable: divorce_in_us
       is: False
 ---
@@ -521,7 +541,15 @@ id: criminal history intro
 generic object: ALPeopleList
 continue button field: x[i].criminal_history_intro
 question: |
+  % if interview_type == 'adult':
+    % if i == 0:
+    Criminal history
+    % else:
+    Spouse's criminal history
+    % endif
+  % else:
   Criminal history
+  % endif
 subquestion: |
   % if interview_type == 'adult':
     % if i == 0:
@@ -915,6 +943,19 @@ fields:
       - Yes, I want to ask the court to waive publication.: True
       - No, I am okay with newspaper publication.: False
 ---
+id: spouse request waiver
+question: |
+  Is your spouse worried that publishing their name change request in the newspaper would be a hardship?
+subquestion: |
+  Your spouse can ask the judge to skip publication of the name change if it would be a hardship on the person asking for a name change. A hardship could include harm to health or safety.
+fields:
+  - no label: spouse_request_waiver
+    datatype: radio
+    choices:
+      - Yes, my spouse wants to ask the court to waive publication.: True
+      - No, my spouse is okay with newspaper publication.: False
+
+---
 id: publication waiver reasons
 question: |
   Why do you need a waiver?
@@ -947,13 +988,37 @@ fields:
       minlength: |
         Please select at least one or click < Back if none apply.
 ---
+id: spouse publication waiver reasons
+question: |
+  Why does your spouse need a waiver?
+subquestion: |
+  Your spouse may need a waiver if they have or did have protection from a court order. They may also need a waiver if publication would be a hardship.
+  
+  A hardship can be many things. It can include fear of:
+  
+  * Physical violence,
+  * Discrimination,
+  * Harassment,
+  * Bullying, or
+  * Threats of violence.
+fields:
+  - no label: spouse_waiver_reason
+    datatype: checkboxes
+    minlength: 1
+    choices:
+      - My spouse has or did have protection from a court order.: order
+      - Publishing notice in a newspaper would be a hardship for my spouse.: hardship
+    validation messages:
+      minlength: |
+        Please select at least one or click < Back if none apply.
+---
 id: protective order type
 question: |
   What kind of court protection do or did you have?
 subquestion: |
   You can enter details about the order on another screen.
 
-  If you do any of these kinds of orders, you can click **Back** and change your answer.
+  If you do not have or did not have any of these kinds of orders, you can click **Back** and change your answer.
 fields:
   - I have or did have protection from: protective_order
     datatype: checkboxes
@@ -973,6 +1038,34 @@ fields:
     maxlength: 25
     show if:
       variable: protective_order['other_order']
+      is: True
+---
+id: spouse protective order type
+question: |
+  What kind of court protection does or did your spouse have?
+subquestion: |
+  You can enter details about the order on another screen.
+
+  If your spouse does not have or did not have any of these kinds of orders, you can click **Back** and change your answer.
+fields:
+  - My spouse has or did have protection from: spouse_protective_order
+    datatype: checkboxes
+    minlength: 1
+    none of the above: False
+    choices:
+      - An Order of Protection: op
+      - A Stalking No Contact Order: snco
+      - A Civil No Contact Order: cnco
+      - A Protective order in someone else's criminal case: other_criminal
+      - Being a protected person under someone else's bail conditions: bail
+      - A similar protective order outside Illinois: other_order
+    validation messages:
+      minlength: |
+        Please select at least one or click < Back if none apply.
+  - In which state was the protective order? (not Illinois): spouse_other_order_state
+    maxlength: 25
+    show if:
+      variable: spouse_protective_order['other_order']
       is: True
 ---
 id: hardship text
@@ -997,7 +1090,7 @@ subquestion: |
   There can be other reasons why notice and publication may be a hardship. For example, paying newspaper publication fees.
   % endif
   
-  This is optional. Your answers so far are enough for a judge to grant your request to waive notice and publication. They will go into your forms. Sometimes it is helpful to explain your hardship in your own words.
+  This is optional. Your answers so far are enough for a judge to grant your request to waive notice and publication. That information will go on your forms. Sometimes it is helpful to explain your hardship in your own words.
   
   % if interview_type == "child":
   ${collapse_template(child_notice_waiver_example)}
@@ -1007,6 +1100,25 @@ subquestion: |
 
 fields:
   - Notice and publication would be a hardship because (optional):: hardship_text
+    input type: area
+    rows: 10
+    maxlength: 500
+    required: False
+---
+id: spouse hardship text
+question: |
+  Explain why notice and publication would be a hardship for your spouse (optional)
+subquestion: |  
+  There can be other reasons why notice and publication may be a hardship. For example, paying newspaper publication fees.
+  
+  This is optional. Your answers so far are enough for a judge to grant your spouse's request to waive notice and publication. That information will go on the forms. Sometimes it is helpful to explain a hardship in their own words.
+  
+  **Important:** Answer this question from your spouse's perspective.
+  
+  ${collapse_template(spouse_notice_waiver_example)}
+
+fields:
+  - Notice and publication would be a hardship because (optional):: spouse_hardship_text
     input type: area
     rows: 10
     maxlength: 500
@@ -1035,7 +1147,14 @@ content: |
   This explanation will go on your *Motion to Waive Notice and Publication*. You can explain why publishing your name change request in the newspaper would put you at risk or why it would be a hardship.
   
   Example: "I need a name change because I am trying to get away from my ex-boyfriend. He has abused me in the past. I am afraid he will hurt me if he learns about my name change request."
-
+---
+template: spouse_notice_waiver_example
+subject: |
+  **What should my answer look like?**
+content: |  
+  This explanation will go on your spouse's *Motion to Waive Notice and Publication*. Your spouse can explain why publishing their name change request in the newspaper would put them at risk or why it would be a hardship.
+  
+  Example: "I need a name change because I am trying to get away from my ex-boyfriend. He has abused me in the past. I am afraid he will hurt me if he learns about my name change request."
 ---
 id: protective order details
 question: |
@@ -1045,7 +1164,7 @@ question: |
   More protective order case details
   % endif
 subquestion: |
-  For any of the following, enter more information to your *Motion to Waive Notice and Publication*:
+  For any of the following, enter more information for your *Motion to Waive Notice and Publication*:
   
   % if protective_order['op']:
    * An Order of Protection
@@ -1116,17 +1235,110 @@ code: |
 code: |
   if orders.number_gathered() >= 4:
     orders.there_is_another = False
+
+
+---
+id: spouse protective order details
+question: |
+  % if i == 0:
+  Spouse protective order case details
+  % else:
+  More spouse protective order case details
+  % endif
+subquestion: |
+  For any of the following, enter more information for your spouse's *Motion to Waive Notice and Publication*:
+  
+  % if spouse_protective_order['op']:
+   * An Order of Protection
+  % endif
+  % if spouse_protective_order['snco']:
+   * A Stalking No Contact Order
+  % endif
+  % if spouse_protective_order['cnco']:
+   * A Civil No Contact Order
+  % endif
+  % if spouse_protective_order['other_criminal']:
+   * A Protective order in someone else's criminal case
+  % endif
+  % if spouse_protective_order['bail']:
+   * Being a protected person under someone else's bail conditions
+  % endif
+  % if spouse_protective_order['other_order']:
+   * A similar protective order outside Illinois
+  % endif
+fields:
+  - Case number: spouse_orders[i].number
+    maxlength: 30
+  - County: spouse_orders[i].name.text
+    maxlength: 30
+  - State: spouse_orders[i].state
+    code: |
+      states_list()
+    default: IL      
+---
+id: any other spouse orders
+question: |
+  Does your spouse have any other protective order cases?
+subquestion: |
+  To waive notice and publication in the name change request, your spouse must add details about the following cases:
+  
+  % if spouse_protective_order['op']:
+   * An Order of Protection
+  % endif
+  % if spouse_protective_order['snco']:
+   * A Stalking No Contact Order
+  % endif
+  % if spouse_protective_order['cnco']:
+   * A Civil No Contact Order
+  % endif
+  % if spouse_protective_order['other_criminal']:
+   * A Protective order in someone else's criminal case
+  % endif
+  % if spouse_protective_order['bail']:
+   * Being a protected person under someone else's bail conditions
+  % endif
+  % if spouse_protective_order['other_order']:
+   * A similar protective order outside Illinois
+  % endif
+  
+  You can enter up to 4 cases. So far you have told us about:
+  
+  % for order in spouse_orders:
+   * Case number: ${order.number} in ${order.name.text}, ${order.state}
+  % endfor
+fields:
+  - "Add another case?": spouse_orders.there_is_another
+    datatype: yesnoradio
+---
+code: |
+  spouse_orders[i].name.text
+  spouse_orders[i].complete = True
+---
+code: |
+  if spouse_orders.number_gathered() >= 4:
+    spouse_orders.there_is_another = False
+
 ---
 id: publication intro
+#reconsider: True
 continue button field: publication_intro
 question: |
   Information about publication
 subquestion: |
-  At the end of this program, you can download a *Publication Notice of Court Date for Request for Name Change*. 
+  % if change_spouse_name == "Yes":
+  At the end of this program, you can download a *Publication Notice of Court Date for Request for Name Change*. There will be a separate notice for each name change **unless**:
   
-  You will have to publish this in a newspaper in the county where you live once a week for 3 weeks in a row. There may be a publication fee to put your notice in the newspaper.
+  * You are requesting a name change after your divorce, or
+  * You or your spouse are requesting a waiver of publication.
   
-  Your notice must have details about when your name change request will be in court. This includes a hearing date that the court clerk will give you. When you get the hearing date, **ask for a date 6-8 weeks in the future** so you have plenty of time to set up the newspaper publication.
+  You will have to publish each notice in a newspaper in the county where you or your spouse live once a week for 3 weeks in a row. There may be a publication fee to put the notice in the newspaper.
+  % else:
+  At the end of this program, you can download a *Publication Notice of Court Date for Request for Name Change*.
+  
+  You will have to publish the notice in a newspaper in the county where you live once a week for 3 weeks in a row. There may be a publication fee to put the notice in the newspaper.
+  % endif
+  
+  The notice must have details about when the name change request will be in court. This includes a hearing date that the court clerk will give you. When you get the hearing date, **ask for a date 6-8 weeks in the future** so you have plenty of time to set up the newspaper publication.
 
   % if interview_type == "adult":
   You can learn more from the "How to Change Your Name" instructions you can download at the end of this program.
@@ -1134,12 +1346,12 @@ subquestion: |
   You can learn more from the "How to Change Children's Names" instructions you can download at the end of this program.
   % endif
 ---
-id: publication placeholder
-continue button field: publication_placeholder
+id: complete publication notice
+continue button field: complete_publication_notice
 question: |
-  Publication placeholder
+  Complete your publication notice
 subquestion: |
-  When you file your name change request, the clerk should give you details about the court date. 
+  When you file your name change request, the clerk should give you details about going to court. 
   
   Add the court hearing date, time, and how to attend court to the *Publication Notice of Court Date for Request for Name Change*.
   
@@ -1191,6 +1403,18 @@ choices:
   - Yes: True
   - No: False
 ---
+id: spouse hide address
+question: |
+  Does your spouse want to keep their address hidden?
+subquestion: |
+  Your spouse does not need to list their address on the court papers if this would put them or their household at risk.
+  
+  Your spouse can use an address where they can receive court notices instead.
+field: spouse_hide_address
+choices:
+  - Yes: True
+  - No: False
+---
 id: get address
 question: |
   % if hide_address:
@@ -1218,8 +1442,17 @@ fields:
 ---
 id: get spouse address
 question: |
-  What is your spouse's address?
+  % if spouse_hide_address:
+  What is your spouse's mailing address?
+  % else:
+  What is your spouse's home address?
+  % endif
 subquestion: |
+  % if spouse_hide_address:
+  **This address will appear on the court papers.** Your spouse may receive court notices and documents about their case at this address.
+  % else:
+  **This address will appear on the court papers.** If they do not want this, click **Back** to keep their address hidden.
+  % endif
 fields:
   - Street address: users[1].address.address
     address autocomplete: True
@@ -1246,7 +1479,7 @@ id: spouse phone number
 question: |
   What is your spouse's phone number?
 subquestion: |
-  If you do not want to list their phone number on your forms, leave this blank.
+  If you do not want to list their phone number on the forms, leave this blank.
 fields:
   - Spouse's phone: users[1].phone_number
     datatype: al_international_phone
@@ -1377,10 +1610,10 @@ continue button field: district_1
 question: |
   Cook County First Municipal District requirements
 subquestion: |
-  **Important note if filing a name change at the Daley Center:** You must e-file, as an exhibit, a photo or scanned copy of your birth certificate and a photo I.D. The exhibits must be saved as a PDF file and be in portrait orientation.
+  **Important note if filing a name change at the Daley Center:** You must e-file, as an exhibit, a photo or scanned copy of your birth certificate and a photo ID. The exhibits must be saved as a PDF file and be in portrait orientation.
   
   If your birth certificate is in a language other than English, you must provide a certified translation of your birth certificate.
-  
+
   Visit **[Illinois Court Help](https://www.ilcourthelp.gov/)**, or you can call or text (833) 411-1121 for assistance.
 ---
 id: get docs screen
@@ -1431,6 +1664,8 @@ objects:
   - order: ALDocument.using(title="Order for name change", filename="order.pdf", has_addendum=False)
   - motion_to_waive_notice: ALDocument.using(title="Motion to Waive Notice and Publication", filename="motion_to_waive_notice.pdf", has_addendum=False)
   - order_to_waive_notice: ALDocument.using(title="Order to Waive Notice and Publication", filename="order_to_waive_notice.pdf", has_addendum=False)
+  - spouse_motion_to_waive_notice: ALDocument.using(title="Spouse's Motion to Waive Notice and Publication", filename="motion_to_waive_notice_spouse.pdf", has_addendum=False)
+  - spouse_order_to_waive_notice: ALDocument.using(title="Spouse's Order to Waive Notice and Publication", filename="order_to_waive_notice_spouse.pdf", has_addendum=False)
   - publication_notice: ALDocument.using(title="Publication Notice", filename="publication_notice.pdf", has_addendum=False)
   - publication_notice_spouse: ALDocument.using(title="Publication Notice for spouse", filename="publication_notice_spouse.pdf", has_addendum=False)
 
@@ -1444,6 +1679,8 @@ code: |
   order.enabled = True
   motion_to_waive_notice.enabled = False
   order_to_waive_notice.enabled = False
+  spouse_motion_to_waive_notice.enabled = False
+  spouse_order_to_waive_notice.enabled = False
   publication_notice.enabled = False
   publication_notice_spouse.enabled = False
 
@@ -1454,24 +1691,25 @@ code: |
     if users[1].felonies or users[1].registry or users[1].id_theft:
       if users[1].convictions.number() > 3:
         spouse_additional_criminal_history.enabled = True
-    
-
-  if request_waiver == True:  
-    motion_to_waive_notice.enabled = True
-    order_to_waive_notice.enabled = True
 
   if users[0].after_divorce == False:
-    if request_waiver == False:
+    if request_waiver == True:  
+      motion_to_waive_notice.enabled = True
+      order_to_waive_notice.enabled = True
+    else:
       publication_notice.enabled = True
-      
-    # should we add "and request_waiver == False" to this?  
-    if change_spouse_name == "Yes":
+    
+  if change_spouse_name == "Yes":
+    if spouse_request_waiver == True:  
+      spouse_motion_to_waive_notice.enabled = True
+      spouse_order_to_waive_notice.enabled = True
+    else:  
       publication_notice_spouse.enabled = True
 
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, publication_notice, publication_notice_spouse, order], filename="name_change_request.pdf", title="All forms")
-  - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, order], filename="name_change_request.pdf", title="Name change request")
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, publication_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, publication_notice_spouse, order], filename="name_change_request.pdf", title="All forms")
+  - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, order], filename="name_change_request.pdf", title="Name change request")
 ---
 objects:
   - request_pdf_bundle: ALDocumentBundle.using(elements=[request, additional_criminal_history, spouse_additional_criminal_history], filename="request.pdf", title="Request for name change")
@@ -1511,7 +1749,8 @@ attachment:
         ${ users[0].new.name.last }
         % else:
         ${ users[0].new.name.last }, ${ users[0].new.name.suffix }
-        % endif            - "user_resident_date": ${ users[0].resident_date }
+        % endif            
+    - "user_resident_date": ${ users[0].resident_date }
     - "user_dob": ${ users[0].birthdate }
     - "user_birth_place": |
         % if users[0].in_america:
@@ -1527,7 +1766,11 @@ attachment:
     - "user_divorce_yes": ${ True if users[0].after_divorce == True else '' }
     - "user_divorce_location": |
         % if users[0].after_divorce:
+        % if divorce_in_us:
         ${ divorce_location.county }, ${divorce_location.state}
+        % else:
+        ${ divorce_location.intl_text}
+        % endif
         % endif
     - "user_divorce_date": ${ divorce_date if users[0].after_divorce else '' }
     - "user_misdemeanor_yes": ${ True if users[0].misdemeanors == True else '' }
@@ -2035,8 +2278,6 @@ attachment:
         No
         % endif
         % endif
-
-
 ---
 attachment:
   variable name: motion_to_waive_notice[i]
@@ -2080,6 +2321,47 @@ attachment:
     - "user_email": ${ users[0].email if users[0].email_notice else '' }
 ---
 attachment:
+  variable name: spouse_motion_to_waive_notice[i]
+  name: spouse_motion_to_waive_notice
+  filename: spouse_motion_to_waive_notice
+  skip undefined: True
+  editable: False
+  pdf template file: motion_to_waive_notice.pdf
+  fields:      
+    - "trial_court_county": ${ trial_court.address.county }
+    - "user__1": ${ users[1].name.full(middle="full") }
+    - "waiver_order_cb": ${ True if spouse_waiver_reason['order'] == True else '' }
+    - "protective_order_op": ${ True if spouse_protective_order['op'] == True else '' }
+    - "protective_order_snco": ${ True if spouse_protective_order['snco'] == True else '' }
+    - "protective_order_cnco": ${ True if spouse_protective_order['cnco'] == True else '' }
+    - "protective_order_criminal": ${ True if spouse_protective_order['other_criminal'] == True else '' }
+    - "protective_order_bail": ${ True if spouse_protective_order['bail'] == True else '' }
+    - "protective_order_other": ${ True if spouse_protective_order['other_order'] == True else '' }
+    - "protective_order_other_state": ${ spouse_other_order_state if spouse_protective_order['other_order'] else '' }
+    - "protective_order_minor_parent": ${ '' }
+    - "waiver_hardship_cb": ${ True if spouse_waiver_reason['hardship'] == True else '' }
+    - "hardship_text": ${ spouse_hardship_text }
+    - "order_county_1": ${ spouse_orders[0].name.text if spouse_waiver_reason['order'] == True else '' }
+    - "order_state_1": ${ spouse_orders[0].state if spouse_waiver_reason['order'] == True else '' }
+    - "order_case_number_1": ${ spouse_orders[0].number if spouse_waiver_reason['order'] == True else '' }
+    - "order_county_2": ${ spouse_orders[1].name.text if spouse_waiver_reason['order'] == True else '' }
+    - "order_state_2": ${ spouse_orders[1].state if spouse_waiver_reason['order'] == True else '' }
+    - "order_case_number_2": ${ spouse_orders[1].number if spouse_waiver_reason['order'] == True else '' }
+    - "order_county_3": ${ spouse_orders[2].name.text if spouse_waiver_reason['order'] == True else '' }
+    - "order_state_3": ${ spouse_orders[2].state if spouse_waiver_reason['order'] == True else '' }
+    - "order_case_number_3": ${ spouse_orders[2].number if spouse_waiver_reason['order'] == True else '' }
+    - "order_county_4": ${ spouse_orders[3].name.text if spouse_waiver_reason['order'] == True else '' }
+    - "order_state_4": ${ spouse_orders[3].state if spouse_waiver_reason['order'] == True else '' }
+    - "order_case_number_4": ${ spouse_orders[3].number if spouse_waiver_reason['order'] == True else '' }
+    - "user_signature": ${ users[1].name.full(middle="full") if e_signature else '' }
+    - "user__2": ${ users[1].name.full(middle="full") }
+    - "user_address": ${ users[1].address.on_one_line(bare=True) }
+    - "user_hide_address_cb": ${ True if spouse_hide_address else '' }
+    - "user_phone": ${ phone_number_formatted(users[1].phone_number) }
+    - "user_atty_number": ${ '' }
+    - "user_email": ${ users[1].email if users[1].email_notice else '' }
+---
+attachment:
   variable name: publication_notice[i]
   name: publication_notice
   filename: publication_notice
@@ -2107,9 +2389,9 @@ attachment:
         ${ users[0].new.name.last }, ${ users[0].new.name.suffix }
         % endif            
     - "user_resident_date": ${ users[0].resident_date }
-    - "courthouse_address": ${ courthouse_info }
-    - "clerk_phone": ${ trial_court.phone }
-    - "clerk_website": ${ trial_court.website }
+    #- "courthouse_address": ${ courthouse_info }
+    #- "clerk_phone": ${ trial_court.phone }
+    #- "clerk_website": ${ trial_court.website }
     - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
     - "user__2": ${ users[0].name.full(middle="full") }
     - "user_address": ${ users[0].address.on_one_line(bare=True) }
@@ -2123,7 +2405,7 @@ attachment:
   name: publication_notice_spouse
   filename: publication_notice_spouse
   skip undefined: True
-  editable: False
+  editable: True
   pdf template file: publication_notice.pdf
   fields:
     - "trial_court_county": ${ trial_court.address.county }
@@ -2134,7 +2416,7 @@ attachment:
         % if users[1].name.suffix == "":
         ${ users[1].name.last }
         % else:
-        ${ users[1].name.last }, ${ users[1].new.name.suffix }
+        ${ users[1].name.last }, ${ users[1].name.suffix }
         % endif            
     - "user_name_first_new": ${ users[1].new.name.first }
     - "user_name_middle_new": ${ users[1].new.name.middle }
@@ -2142,15 +2424,15 @@ attachment:
         % if users[1].new.name.suffix == "":
         ${ users[1].new.name.last }
         % else:
-        ${ users[1].new.name.last }, ${ users[0].new.name.suffix }
+        ${ users[1].new.name.last }, ${ users[1].new.name.suffix }
         % endif            
-    - "courthouse_address": ${ courthouse_info }
-    - "clerk_phone": ${ trial_court.phone }
-    - "clerk_website": ${ trial_court.website }
+    #- "courthouse_address": ${ courthouse_info }
+    #- "clerk_phone": ${ trial_court.phone }
+    #- "clerk_website": ${ trial_court.website }
     - "user_signature": ${ users[1].name.full(middle="full") if e_signature else '' }
     - "user__2": ${ users[1].name.full(middle="full") }
     - "user_address": ${ users[1].address.on_one_line(bare=True) }
-    - "user_hide_address_cb": ${ '' }
+    - "user_hide_address_cb": ${ True if spouse_hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[1].phone_number) }
     - "user_atty_number": ${ '' }
     - "user_email": ${ users[0].email if users[1].email_notice else '' }
@@ -2176,7 +2458,17 @@ attachment:
   fields:
     - "trial_court_county": ${ trial_court.address.county }
     - "user": ${ users[0].name.full(middle="full") }
-
+---
+attachment:
+  variable name: spouse_order_to_waive_notice[i]
+  name: spouse_order_to_waive_notice
+  filename: spouse_order_to_waive_notice
+  skip undefined: True
+  editable: False
+  pdf template file: order_to_waive_notice.pdf
+  fields:
+    - "trial_court_county": ${ trial_court.address.county }
+    - "user": ${ users[1].name.full(middle="full") }
 
 ---
 ############### Review page
@@ -2364,9 +2656,18 @@ review:
       **Spouse lived in Illinois since:**
       ${ users[1].resident_date }
     show if: change_spouse_name == 'Yes'
+  - Edit: spouse_hide_address
+    button: |
+      **Does your spouse want to keep their address hidden?**
+      ${ word(yesno(spouse_hide_address)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].address.address
     button: |
+      % if spouse_hide_address:
+      **Your spouse's mailing address (will appear on your court papers):**
+      % else:
       **Your spouse's address:**
+      % endif    
       ${ users[1].address.on_one_line(bare=True) }
     show if: change_spouse_name == 'Yes'
   - Edit: users[1].phone_number
@@ -2389,32 +2690,37 @@ review:
     button: |
       **Does your spouse have any arrests for which charges have not been filed?**
       ${ word(yesno(users[1].pending_arrests)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].pending_charges
     button: |
       **Does your spouse have any pending misdemeanor or felony charges?**
       ${ word(yesno(users[1].pending_charges)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].misdemeanors
     button: |
       **Does your spouse have any convictions or were they placed on probation for any misdemeanors?**
       ${ word(yesno(users[1].misdemeanors)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].misdemeanors
     button: |
       **Were all of these misdemeanors pardoned?**
       ${ word(yesno(users[1].misdemeanor_pardon)) }
-    show if: users[1].misdemeanors == True
+    show if: change_spouse_name == 'Yes' and users[1].misdemeanors == True
   - Edit: users[1].felonies
     button: |
       **Does your spouse have any convictions or were they placed on probation for any felonies?**
       ${ word(yesno(users[1].felonies)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].felonies
     button: |
       **Were all of these felonies pardoned?**
       ${ word(yesno(users[1].felony_pardon)) }
-    show if: users[1].felonies == True
+    show if: change_spouse_name == 'Yes' and users[1].felonies == True
   - Edit: users[1].registry
     button: |
       **Does your spouse have any convictions or were they placed on probation for a crime that required them to register?**
       ${ word(yesno(users[1].registry)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].registry
     button: |
       **Name change exceptions to spouse's registry offenses:**
@@ -2431,11 +2737,12 @@ review:
       % if users[1].registry_exceptions['Gender-related identity']:
       * Gender-related identity
       % endif
-    show if: users[1].registry == True
+    show if: change_spouse_name == 'Yes' and users[1].registry == True
   - Edit: users[1].id_theft
     button: |
       **Does your spouse have any convictions or were they placed on probation for identity theft?**
       ${ word(yesno(users[1].id_theft)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].convictions.revisit
     button: |
       **Your spouse's convictions: (Edit to change details)**
@@ -2443,7 +2750,7 @@ review:
       % for my_var in users[1].convictions:
         * ${ my_var.name.text } on ${ my_var.date }
       % endfor
-    show if: users[1].felonies or users[1].registry or users[1].id_theft
+    show if: change_spouse_name == 'Yes' and (users[1].felonies or users[1].registry or users[1].id_theft)
 
   - Edit: 
       - users[0].after_divorce
@@ -2457,9 +2764,11 @@ review:
 
       Date of divorce judgment: ${ showifdef('divorce_date') }
 
-      County (or city if no county): ${ showifdef('divorce_location.county') }
-
-      State or province: ${ showifdef('divorce_location.state') }
+      % if divorce_in_us:
+      Divorce location: ${ showifdef('divorce_location.county') }, ${ showifdef('divorce_location.state') }
+      % else:
+      Divorce location: ${ showifdef('divorce_location.intl_text') }
+      % endif      
     show if: users[0].after_divorce == True
   - Edit: request_waiver
     button: |
@@ -2513,6 +2822,60 @@ review:
       ${ hardship_text }
     show if: request_waiver == True
 
+  - Edit: spouse_request_waiver
+    button: |
+      **Does your spouse want to request a waiver of newspaper publication for their name change?**
+      ${ word(yesno(spouse_request_waiver)) }
+    show if: change_spouse_name == 'Yes'
+  - Edit: spouse_waiver_reason
+    button: |
+      **Why does your spouse need a waiver?**
+      
+      % if spouse_waiver_reason['order']:
+      * They have or did have protection from a court order.
+      % endif
+      % if spouse_waiver_reason['hardship']:
+      * Publishing notice in a newspaper would be a hardship for the person who is changing their name.
+      % endif
+    show if: change_spouse_name == 'Yes' and spouse_request_waiver == True
+  - Edit: spouse_protective_order
+    button: |
+      **What kind of court protection does or did your spouse have?**
+      
+      % if spouse_protective_order['op'] == True:
+      * An Order of Protection
+      % endif
+      % if spouse_protective_order['snco'] == True:
+      * A Stalking No Contact Order
+      % endif
+      % if spouse_protective_order['cnco'] == True:
+      * A Civil No Contact Order
+      % endif
+      % if spouse_protective_order['other_criminal'] == True:
+      * A protective order in someone else's criminal case
+      % endif
+      % if spouse_protective_order['bail'] == True:
+      * Protection under someone else's bail conditions
+      % endif
+      % if spouse_protective_order['other_order'] == True:
+      * A protective order in ${ spouse_other_order_state }
+      % endif
+    show if: change_spouse_name == 'Yes' and spouse_request_waiver == True and spouse_waiver_reason['order'] == True
+  - Edit: spouse_orders.revisit
+    button: |
+      **Spouse's protective orders: (Edit to change details)**
+
+      % for my_var in spouse_orders:
+        * ${ my_var.number } in ${ my_var.name.text }, ${ my_var.state }
+      % endfor
+    show if: change_spouse_name == 'Yes' and spouse_request_waiver == True and spouse_waiver_reason['order'] == True
+  - Edit: spouse_hardship_text
+    button: |
+      **Notice and publication would be a hardship for my spouse because (optional):**
+      ${ spouse_hardship_text }
+    show if: change_spouse_name == 'Yes' and spouse_request_waiver == True
+
+
   - Edit: 
       - trial_court_index
       - recompute:
@@ -2545,6 +2908,7 @@ review:
     button: |
       **Does your spouse want to add their e-signature to your forms?**
       ${ word(yesno(e_signature_spouse)) }
+    show if: change_spouse_name == 'Yes'
 ---
 id: convictions revisit
 continue button field: users[i].convictions.revisit
@@ -2604,6 +2968,31 @@ subquestion: |
 ---
 table: orders.table
 rows: orders
+columns:
+  - Case number: |
+      row_item.number if defined("row_item.name.text") else ""
+  - County: |
+      row_item.name.text if defined("row_item.name.text") else ""
+  - State: |
+      row_item.state if defined("row_item.name.text") else ""
+edit:
+  - name.text
+delete buttons: True
+confirm: True
+---
+id: spouse protective orders revisit
+continue button field: spouse_orders.revisit
+question: |
+  Edit your spouse's protective orders
+subquestion: |
+  ${ spouse_orders.table }
+
+  % if spouse_orders.number_gathered() < 4:
+  ${ spouse_orders.add_action() }
+  % endif
+---
+table: spouse_orders.table
+rows: spouse_orders
 columns:
   - Case number: |
       row_item.number if defined("row_item.name.text") else ""
@@ -2822,9 +3211,18 @@ review:
       **Spouse lived in Illinois since:**
       ${ users[1].resident_date }
     show if: change_spouse_name == 'Yes'
+  - Edit: spouse_hide_address
+    button: |
+      **Does your spouse want to keep their address hidden?**
+      ${ word(yesno(spouse_hide_address)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].address.address
     button: |
+      % if spouse_hide_address:
+      **Your spouse's mailing address (will appear on your court papers):**
+      % else:
       **Your spouse's address:**
+      % endif    
       ${ users[1].address.on_one_line(bare=True) }
     show if: change_spouse_name == 'Yes'
   - Edit: users[1].phone_number
@@ -2847,32 +3245,37 @@ review:
     button: |
       **Does your spouse have any arrests for which charges have not been filed?**
       ${ word(yesno(users[1].pending_arrests)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].pending_charges
     button: |
       **Does your spouse have any pending misdemeanor or felony charges?**
       ${ word(yesno(users[1].pending_charges)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].misdemeanors
     button: |
       **Does your spouse have any convictions or were they placed on probation for any misdemeanors?**
       ${ word(yesno(users[1].misdemeanors)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].misdemeanors
     button: |
       **Were all of these misdemeanors pardoned?**
       ${ word(yesno(users[1].misdemeanor_pardon)) }
-    show if: users[1].misdemeanors == True
+    show if: change_spouse_name == 'Yes' and users[1].misdemeanors == True
   - Edit: users[1].felonies
     button: |
       **Does your spouse have any convictions or were they placed on probation for any felonies?**
       ${ word(yesno(users[1].felonies)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].felonies
     button: |
       **Were all of these felonies pardoned?**
       ${ word(yesno(users[1].felony_pardon)) }
-    show if: users[1].felonies == True
+    show if: change_spouse_name == 'Yes' and users[1].felonies == True
   - Edit: users[1].registry
     button: |
       **Does your spouse have any convictions or were they placed on probation for a crime that required them to register?**
       ${ word(yesno(users[1].registry)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].registry
     button: |
       **Name change exceptions to spouse's registry offenses:**
@@ -2889,11 +3292,12 @@ review:
       % if users[1].registry_exceptions['Gender-related identity']:
       * Gender-related identity
       % endif
-    show if: users[1].registry == True
+    show if: change_spouse_name == 'Yes' and users[1].registry == True
   - Edit: users[1].id_theft
     button: |
       **Does your spouse have any convictions or were they placed on probation for identity theft?**
       ${ word(yesno(users[1].id_theft)) }
+    show if: change_spouse_name == 'Yes'
   - Edit: users[1].convictions.revisit
     button: |
       **Your spouse's convictions: (Edit to change details)**
@@ -2901,7 +3305,7 @@ review:
       % for my_var in users[1].convictions:
         * ${ my_var.name.text } on ${ my_var.date }
       % endfor
-    show if: users[1].felonies or users[1].registry or users[1].id_theft
+    show if: change_spouse_name == 'Yes' and (users[1].felonies or users[1].registry or users[1].id_theft)
 ---
 id: notice and publication review screen
 section: Notice and publication
@@ -2923,9 +3327,11 @@ review:
 
       Date of divorce judgment: ${ showifdef('divorce_date') }
 
-      County (or city if no county): ${ showifdef('divorce_location.county') }
-
-      State or province: ${ showifdef('divorce_location.state') }
+      % if divorce_in_us:
+      Divorce location: ${ showifdef('divorce_location.county') }, ${ showifdef('divorce_location.state') }
+      % else:
+      Divorce location: ${ showifdef('divorce_location.intl_text') }
+      % endif      
     show if: users[0].after_divorce == True
   - Edit: request_waiver
     button: |
@@ -2978,6 +3384,58 @@ review:
       **Notice and publication would be a hardship because (optional):**
       ${ hardship_text }
     show if: request_waiver == True
+  - Edit: spouse_request_waiver
+    button: |
+      **Does your spouse want to request a waiver of newspaper publication for their name change?**
+      ${ word(yesno(spouse_request_waiver)) }
+    show if: change_spouse_name == 'Yes'
+  - Edit: spouse_waiver_reason
+    button: |
+      **Why does your spouse need a waiver?**
+      
+      % if spouse_waiver_reason['order']:
+      * They have or did have protection from a court order.
+      % endif
+      % if spouse_waiver_reason['hardship']:
+      * Publishing notice in a newspaper would be a hardship for the person who is changing their name.
+      % endif
+    show if: change_spouse_name == 'Yes' and spouse_request_waiver == True
+  - Edit: spouse_protective_order
+    button: |
+      **What kind of court protection does or did your spouse have?**
+      
+      % if spouse_protective_order['op'] == True:
+      * An Order of Protection
+      % endif
+      % if spouse_protective_order['snco'] == True:
+      * A Stalking No Contact Order
+      % endif
+      % if spouse_protective_order['cnco'] == True:
+      * A Civil No Contact Order
+      % endif
+      % if spouse_protective_order['other_criminal'] == True:
+      * A protective order in someone else's criminal case
+      % endif
+      % if spouse_protective_order['bail'] == True:
+      * Protection under someone else's bail conditions
+      % endif
+      % if spouse_protective_order['other_order'] == True:
+      * A protective order in ${ spouse_other_order_state }
+      % endif
+    show if: change_spouse_name == 'Yes' and spouse_request_waiver == True and spouse_waiver_reason['order'] == True
+  - Edit: spouse_orders.revisit
+    button: |
+      **Spouse's protective orders: (Edit to change details)**
+
+      % for my_var in spouse_orders:
+        * ${ my_var.number } in ${ my_var.name.text }, ${ my_var.state }
+      % endfor
+    show if: change_spouse_name == 'Yes' and spouse_request_waiver == True and spouse_waiver_reason['order'] == True
+  - Edit: spouse_hardship_text
+    button: |
+      **Notice and publication would be a hardship for my spouse because (optional):**
+      ${ spouse_hardship_text }
+    show if: change_spouse_name == 'Yes' and spouse_request_waiver == True
 
 ---
 id: filing details review screen
@@ -3020,3 +3478,4 @@ review:
     button: |
       **Does your spouse want to add their e-signature to your forms?**
       ${ word(yesno(e_signature_spouse)) }
+    show if: change_spouse_name == 'Yes'
