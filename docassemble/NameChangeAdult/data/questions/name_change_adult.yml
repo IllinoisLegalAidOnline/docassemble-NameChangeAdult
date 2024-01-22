@@ -147,12 +147,6 @@ code: |
       publication_intro
       complete_publication_notice
 
-  # IF PUBLICATION do we want to ask if they already have hearing information from court clerk? date, time, in person (courtroom) or remote (phone, website, log-in information). 
-  # do you know this now?
-  # in person or remote?
-  # court hearing date, time, courtroom
-  # if remote - phone, website, login info
-
   set_progress(90)
   nav.set_section('section_filing_details')
   if trial_court_index == -1:
@@ -421,7 +415,7 @@ id: your current legal name
 question:  |
   What is your current legal name?
 subquestion: |
-  Enter your complete legal name as it appears on your birth certificate to avoid issues or delays.
+  Enter your complete legal name. This is often what is listed on your birth certificate or your legal married name.
 
   You can enter your new name on the next screen.
 fields:
@@ -439,7 +433,7 @@ id: your spouse's current legal name
 question:  |
   What is your spouse's current legal name?
 subquestion: |
-  Enter your spouse's complete legal name as it appears on their birth certificate to avoid issues or delays.
+  Enter your spouse's complete legal name. This is often what is listed on their birth certificate or their legal married name.
 
   You can enter your spouse's new name on the next screen.
 fields:
@@ -576,7 +570,7 @@ question: |
   Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any arrests for which charges have not been filed?
   % endif
 subquestion: |
-  If you were arrested but did not go to court or see a judge, then you were probably not charged with a crime. That means the arrest is pending.
+  If you were arrested but did not go to court or see a judge, then you were probably not charged with a crime. That means charges are pending.
 fields:
   - no label: x[i].pending_arrests
     datatype: yesnoradio
