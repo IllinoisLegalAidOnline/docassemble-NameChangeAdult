@@ -195,6 +195,8 @@ subquestion: |
   
   You will also need details about your criminal history. If your spouse is requesting a name change, they must also meet these requirements.
 
+  If you are under 18 and want to change your name, you will need a parent or guardian to file for you. They can use ILAO's [**Name change for a child**](https://www.illinoislegalaid.org/legal-information/name-change-child) Easy Form.
+  
   Set aside 10 to 15 minutes to finish this program. You can log in and save your work to return to later. 
  
   ${ collapse_template(help_example) }  
@@ -212,9 +214,9 @@ continue button field: whats_next
 question: |
   After you finish this program
 subquestion: |
-  After you download your forms, you must file them with the court. This program **does not** file your forms for you.
+  After you download your forms, you must file them with the court in the county where you live. This program **does not** file your forms for you.
   
-  When you file your forms, the court clerk will give you a court date. Usually, you have to publish notice of your name change in a newspaper where you live for 3 weeks. However, if publishing notice would be a hardship to you, including risking your health or safety, you can ask the judge to skip that step. This program will help you make the forms you need either way.
+  When you file your forms, the court clerk will give you a court date. Usually, you have to publish notice of your name change in a newspaper where you live for 3 weeks. However, if publishing notice would be a hardship to you, including risking your health or safety, you can ask the judge to skip that step by filing a motion to waive publication. This program will help you make the forms you need either way.
   
   To learn more, read the "How to Change Your Name" instructions you can download at the end of this program. 
 ---
@@ -388,6 +390,8 @@ subquestion: |
   This program is only for people who are age 18 or older.
   
   If you want to change the name of someone under 18, you can use ILAO's [**Name change for a child**](https://www.illinoislegalaid.org/legal-information/name-change-child) Easy Form.
+  
+  If you are under 18 and want to change your name, you will need a parent or guardian to file for you. They can use ILAO's [**Name change for a child**](https://www.illinoislegalaid.org/legal-information/name-change-child) Easy Form.
   
   Click **Back** if you made a mistake. Or you can talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
 buttons:
@@ -927,14 +931,23 @@ subquestion: |
 ---
 id: request waiver
 question: |
-  Are you worried that publishing your name change request in the newspaper would be a hardship?
+  Are you worried about publishing your name change request in the newspaper?
 subquestion: |
   You can ask the judge to skip publication of the name change if it would be a hardship on the person asking for a name change. A hardship could include harm to health or safety.
+  
+  You can also ask the judge to skip publication if you have or did have a protective court order. This could be:
+  
+  * An Order of Protection,
+  * A Stalking No Contact Order,
+  * A Civil No Contact Order,
+  * A protective order in someone else's criminal case,
+  * Protection under someone else's bail conditions, or
+  * A similar protective order outside Illinois.
 fields:
   - no label: request_waiver
     datatype: radio
     choices:
-      - Yes, I want to ask the court to waive publication.: True
+      - Yes, I want to ask the court to skip publication.: True
       - No, I am okay with newspaper publication.: False
 ---
 id: spouse request waiver
@@ -942,6 +955,16 @@ question: |
   Is your spouse worried that publishing their name change request in the newspaper would be a hardship?
 subquestion: |
   Your spouse can ask the judge to skip publication of the name change if it would be a hardship on the person asking for a name change. A hardship could include harm to health or safety.
+  
+  They can also ask the judge to skip publication if they have or did have a protective court order. This could be:
+  
+  * An Order of Protection,
+  * A Stalking No Contact Order,
+  * A Civil No Contact Order,
+  * A protective order in someone else's criminal case,
+  * Protection under someone else's bail conditions, or
+  * A similar protective order outside Illinois.
+  
 fields:
   - no label: spouse_request_waiver
     datatype: radio
@@ -1618,7 +1641,7 @@ subquestion: |
   
   Your forms are ready. View and download your forms below. Click **Make changes** to fix any mistakes.
 
-  This program **does not** file your forms with the court. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
+  This program **does not** file your forms with the court. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
 
   ${ action_button_html(url_action('review_answers'), label=':edit: Make changes', color='success', size="md") }
   
@@ -1628,7 +1651,7 @@ subquestion: |
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
-  **Note:** This program **does not** file your forms with the court. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/efileil/).
+  **Note:** This program **does not** file your forms with the court. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
   
   Thank you for using ILAO Easy Forms!
 under: |
