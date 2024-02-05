@@ -420,6 +420,8 @@ question:  |
   What is your current legal name?
 subquestion: |
   Enter your complete legal name. This is often what is listed on your birth certificate or your legal married name.
+  
+  **Note:** If your legal name has a suffix that is spelled out, like "Junior" or "Senior," you can enter it in the **Last name** field with your last name. For example, "Smith, Junior."
 
   You can enter your new name on the next screen.
 fields:
@@ -432,12 +434,16 @@ fields:
     code: |
       name_suffix()
     required: False  
+    help: |
+      If the suffix is not listed in the drop-down, enter it in the **Last name** field above. Example: Smith, Junior.
 ---
 id: your spouse's current legal name
 question:  |
   What is your spouse's current legal name?
 subquestion: |
   Enter your spouse's complete legal name. This is often what is listed on their birth certificate or their legal married name.
+
+  **Note:** If their legal name has a suffix that is spelled out, like "Junior" or "Senior," you can enter it in the **Last name** field with their last name. For example, "Smith, Junior."
 
   You can enter your spouse's new name on the next screen.
 fields:
@@ -449,7 +455,9 @@ fields:
   - Suffix: users[1].name.suffix
     code: |
       name_suffix()
-    required: False  
+    required: False
+    help: |
+      If the suffix is not listed in the drop-down, enter it in the **Last name** field above. Example: Smith, Junior.
 ---
 id: your new name
 question:  |
@@ -994,6 +1002,8 @@ subquestion: |
   * Harassment,
   * Bullying, or
   * Threats of violence.
+  
+  **Note:** You may need to explain to the judge in court why you need to skip publication.
 fields:
   - no label: waiver_reason
     datatype: checkboxes
@@ -1018,6 +1028,8 @@ subquestion: |
   * Harassment,
   * Bullying, or
   * Threats of violence.
+
+  **Note:** Your spouse may need to explain to the judge in court why they need to skip publication.
 fields:
   - no label: spouse_waiver_reason
     datatype: checkboxes
