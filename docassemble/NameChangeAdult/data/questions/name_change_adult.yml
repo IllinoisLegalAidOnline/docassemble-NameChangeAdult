@@ -85,7 +85,7 @@ code: |
   nav.set_section('section_spouse')
   if change_spouse_name == "Yes":
     users[1].birthdate
-    if users[1].age_in_years() < 16:
+    if users[1].age_in_years() < 18:
       spouse_not_adult_kickout
       spouse_adult_check
     else:
@@ -403,7 +403,7 @@ continue button field: spouse_not_adult_kickout
 question: |
   Sorry
 subquestion: |
-  Your spouse must be age 16 or older to request a name change.
+  Your spouse must be age 18 or older to request a name change.
   
   This program cannot make name change forms for your spouse. You can talk with a lawyer to discuss your options. Use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
   
@@ -411,7 +411,7 @@ subquestion: |
 ---
 depends on: users[1].birthdate
 code: |
-  if change_spouse_name == "Yes" and users[1].age_in_years() < 16:
+  if change_spouse_name == "Yes" and users[1].age_in_years() < 18:
     change_spouse_name = "No"
   spouse_adult_check = True
 ---
@@ -1945,6 +1945,7 @@ attachment:
     - "spouse_signature": ${ users[1].name.full(middle="full") if e_signature_spouse and change_spouse_name == "Yes" else '' }
     - "spouse_name": ${ users[1].name.full(middle="full") if change_spouse_name == "Yes" else '' }
     - "spouse_address": ${ users[1].address.on_one_line(bare=True) if change_spouse_name == "Yes" else '' }
+    - "spouse_hide_address_cb": ${ True if spouse_hide_address else '' }
     - "spouse_phone": ${ phone_number_formatted(users[1].phone_number) if change_spouse_name == "Yes" else '' }
     - "spouse_atty_number": ${ '' }
     - "spouse_email": ${ users[1].email if users[1].email_notice and change_spouse_name == "Yes" else '' }
