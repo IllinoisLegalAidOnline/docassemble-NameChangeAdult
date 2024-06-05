@@ -7,7 +7,6 @@ metadata:
 ---
 include:
   - docassemble.AssemblyLine:assembly_line.yml
-  - docassemble.ALToolbox:phone-number-validation.yml  
   - docassemble.ILAO:ilao-interview-framework.yml
   - docassemble.ILAO:shared-basic-questions.yml
 ---
@@ -47,6 +46,7 @@ mandatory: True
 code: |
   nav.set_section('section_intro')
   sees_nav_bar
+  snapshot_start
   how_to_use
   set_progress(5)
   whats_next
@@ -157,20 +157,45 @@ code: |
   hide_address
   users[0].address.address
   users[0].phone_number
-  if users[0].email_notice == True:
-    users[0].email
+  #if users[0].email_notice == True:
+  #  users[0].email
   e_signature
   if change_spouse_name == "Yes":
     spouse_hide_address
     users[1].address.address
     users[1].phone_number
-    if users[1].email_notice == True:
-      users[1].email
+    #if users[1].email_notice == True:
+    #  users[1].email
     e_signature_spouse
 
   set_progress(100)
   nav.set_section('section_download')
+  forms_assembling
+  snapshot_forms
   get_docs_screen
+---
+code: |
+  stuff_to_snapshot = {
+  	'start_time': str(current_datetime().format_datetime()),
+  	'started_interview': True, 
+  	}
+    
+  stuff_to_snapshot['zip'] = showifdef('users[0].address.zip')
+
+  stuff_to_snapshot['downloaded_forms'] = showifdef('forms_assembling')
+  
+  store_variables_snapshot(
+  	data=stuff_to_snapshot, persistent=True
+  	)
+  snapshot_interview_state = True
+---
+code: |
+  snapshot_interview_state
+  snapshot_start = True  
+---
+code: |
+  reconsider('snapshot_interview_state')
+  snapshot_forms = True
 ---
 id: welcome
 question: |
@@ -421,7 +446,7 @@ question:  |
 subquestion: |
   Enter your complete legal name. This is often what is listed on your birth certificate or your legal married name.
   
-  **Note:** If your legal name has a suffix that is spelled out, like "Junior" or "Senior," you can enter it in the **Last name** field with your last name. For example, "Smith, Junior."
+  **Note:** If your legal name has a suffix that is not listed, you can enter it in the **Last name** field with your last name. For example: Smith, Junior.
 
   You can enter your new name on the next screen.
 fields:
@@ -443,7 +468,7 @@ question:  |
 subquestion: |
   Enter your spouse's complete legal name. This is often what is listed on their birth certificate or their legal married name.
 
-  **Note:** If their legal name has a suffix that is spelled out, like "Junior" or "Senior," you can enter it in the **Last name** field with their last name. For example, "Smith, Junior."
+  **Note:** If their legal name has a suffix that is not listed, you can enter it in the **Last name** field with their last name. For example: Smith, Junior.
 
   You can enter your spouse's new name on the next screen.
 fields:
@@ -860,12 +885,16 @@ subquestion: |
   % endif
 fields:
   - Offense description: x[i].convictions[j].name.text
-    maxlength: 30
+    input type: area
+    rows: 2
+    maxlength: 75
   - Date of conviction or probation: x[i].convictions[j].date
     datatype: date
     max: ${ today().format("yyyy-MM-dd") }
   - Sentence received: x[i].convictions[j].sentence
-    maxlength: 30
+    input type: area
+    rows: 2
+    maxlength: 75
   - Date sentence completed: x[i].convictions[j].completed_date
     datatype: date
     max: ${ today().format("yyyy-MM-dd") }
@@ -902,9 +931,9 @@ subquestion: |
   % endif
   
   % if x[i].convictions.number() == 1:
-  You can enter up to 17 convictions or probations in total. So far you have told us about ${ x[i].convictions.number() } offense:
+  You can enter up to 12 convictions or probations in total. So far you have told us about ${ x[i].convictions.number() } offense:
   % else:
-  You can enter up to 17 convictions or probations in total. So far you have told us about ${ x[i].convictions.number() } offenses:
+  You can enter up to 12 convictions or probations in total. So far you have told us about ${ x[i].convictions.number() } offenses:
   % endif
   
   % for conviction in x[i].convictions:
@@ -915,13 +944,13 @@ fields:
     datatype: yesnoradio
 ---
 code: |
-  if users[0].convictions.number_gathered() >= 17:
+  if users[0].convictions.number_gathered() >= 12:
     users[0].convictions.there_is_another = False
 ---
 code: |
   #not sure if the change_spouse_name check is needed - will test
   #if change_spouse_name == "Yes":
-  if users[1].convictions.number_gathered() >= 17:
+  if users[1].convictions.number_gathered() >= 12:
     users[1].convictions.there_is_another = False
 ---
 id: notice intro
@@ -1130,7 +1159,7 @@ subquestion: |
 fields:
   - Notice and publication would be a hardship because (optional):: hardship_text
     input type: area
-    rows: 10
+    rows: 11
     maxlength: 500
     required: False
 ---
@@ -1149,7 +1178,7 @@ subquestion: |
 fields:
   - Notice and publication would be a hardship because (optional):: spouse_hardship_text
     input type: area
-    rows: 10
+    rows: 11
     maxlength: 500
     required: False
 ---
@@ -1494,65 +1523,149 @@ fields:
     default: IL      
   - ZIP code: users[1].address.zip
 ---
-id: phone number
-question: |
-  What is your phone number?
-subquestion: |
-  If you do not want to list your phone number on your forms, leave this blank.
-fields:
-  - Phone: users[0].phone_number
-    datatype: al_international_phone
-    required: False
+#id: phone number
+#question: |
+#  What is your phone number?
+#subquestion: |
+#  If you do not want to list your phone number on your forms, leave this blank.
+#fields:
+#  - Phone: users[0].phone_number
+#    datatype: al_international_phone
+#    required: False
+#---
+#id: spouse phone number
+#question: |
+#  What is your spouse's phone number?
+#subquestion: |
+#  If you do not want to list their phone number on the forms, leave this blank.
+#fields:
+#  - Spouse's phone: users[1].phone_number
+#    datatype: al_international_phone
+#    required: False
+#---
+#id: notice by email
+#question: |
+#  Do you have an email address?
+#subquestion: |
+#  If you have an email address, you must list it so the court clerk can contact you about this case.
+#fields:
+#  - "Email?": users[0].email_notice
+#    datatype: yesnoradio
+#---
+#id: spouse notice by email
+#question: |
+#  Does your spouse have an email address?
+#subquestion: |
+#  If your spouse has an email address, you must list it so the court clerk can contact them about this case.
+#fields:
+#  - "Spouse email?": users[1].email_notice
+#    datatype: yesnoradio
+#---
+#id: email address
+#question: |
+#  What email address do you want to list on your court forms?
+#subquestion: |
+#  If you do not want to enter your personal email address, you can create a new email account to get email about your case.
+#  
+#  Be sure to check this email daily, otherwise you may miss important information about your case.
+#fields:
+#  - Email address: users[0].email    
+#    datatype: email
+#---
+#id: spouse email address
+#question: |
+#  What email address does your spouse want to list on the court forms?
+#subquestion: |
+#  If they do not want to enter their personal email address, they can create a new email account to get email about the case. 
+#  
+#  It is important to check this email daily or they may miss important information about the case.
+#fields:
+#  - Spouse's email address: users[1].email    
+#    datatype: email
 ---
-id: spouse phone number
+id: your contact information
 question: |
-  What is your spouse's phone number?
+  What is your contact information?
 subquestion: |
-  If you do not want to list their phone number on the forms, leave this blank.
-fields:
-  - Spouse's phone: users[1].phone_number
-    datatype: al_international_phone
-    required: False
----
-id: notice by email
-question: |
-  Do you have an email address?
-subquestion: |
-  If you have an email address, you must list it so the court clerk can contact you about this case.
-fields:
-  - "Email?": users[0].email_notice
-    datatype: yesnoradio
----
-id: spouse notice by email
-question: |
-  Does your spouse have an email address?
-subquestion: |
-  If your spouse has an email address, you must list it so the court clerk can contact them about this case.
-fields:
-  - "Spouse email?": users[1].email_notice
-    datatype: yesnoradio
----
-id: email address
-question: |
-  What email address do you want to list on your court forms?
-subquestion: |
-  If you do not want to enter your personal email address, you can create a new email account to get email about your case.
+  The court or other parties might need to contact you about this case.
+
+  **This information will appear on your court forms.**
   
-  Be sure to check this email daily, otherwise you may miss important information about your case.
-fields:
+  If you do not want to list a phone number on your forms, leave it blank.
+
+  If you have an email address, you must list it. Be sure to check your email daily, otherwise you may miss important information about your case.
+
+  ${ collapse_template(contact_info_help) }  
+fields:  
+  - Phone number: users[0].phone_number
+    datatype: al_international_phone
+    required: False
+  - Do you have an email address?: users[0].email_notice      
+    datatype: yesnoradio
+  - note: |
+      This email address will appear on your court forms. Be sure to check 
+      this email daily, otherwise you may miss important information about 
+      your case.
+    show if: users[0].email_notice      
   - Email address: users[0].email    
     datatype: email
+    show if: 
+      variable: users[0].email_notice
+      is: True
 ---
-id: spouse email address
+id: spouse contact information
 question: |
-  What email address does your spouse want to list on the court forms?
+  What is your spouse's contact information?
 subquestion: |
-  If they do not want to enter their personal email address, they can create a new email account to get email about the case. 
+  The court or other parties might need to contact your spouse about this case.
+
+  **This information will appear on the court forms.**
   
-  It is important to check this email daily or they may miss important information about the case.
-fields:
-  - Spouse's email address: users[1].email    
+  If your spouse does not want to list a phone number on your forms, leave it blank.
+
+  If your spouse has an email address, they must list it. They should check their email daily, otherwise they may miss important information about their case.
+
+  ${ collapse_template(spouse_contact_info_help) }  
+fields:  
+  - Spouse's phone number: users[1].phone_number
+    datatype: al_international_phone
+    required: False
+  - Does your spouse have an email address?: users[1].email_notice      
+    datatype: yesnoradio
+  - note: |
+      This email address will appear on the court forms. They should check 
+      this email daily, otherwise they may miss important information about 
+      their case.
+    show if: users[1].email_notice      
+  - Email address: users[1].email    
     datatype: email
+    show if: 
+      variable: users[1].email_notice
+      is: True
+---
+template: contact_info_help
+subject: |
+  **What if I don't want to list my email address?**
+content: |  
+  If you do not want to enter your personal email address, you can create a new email account to get email about your case.
+  
+  To make a new email account try one of these email services:
+  
+  * [**Gmail**](https://accounts.google.com/SignUp)
+  * [**Outlook**](https://outlook.live.com/owa/?nlp=1&signup=1)
+  * [**Yahoo**](https://login.yahoo.com/account/create?.lang=en-US&.intl=us)
+---
+template: spouse_contact_info_help
+subject: |
+  **What if my spouse doesn't want to list their email address?**
+content: |  
+  If your spouse does not want to enter their personal email address, they can create a new email account to get email about their case.
+  
+  To make a new email account try one of these email services:
+  
+  * [**Gmail**](https://accounts.google.com/SignUp)
+  * [**Outlook**](https://outlook.live.com/owa/?nlp=1&signup=1)
+  * [**Yahoo**](https://login.yahoo.com/account/create?.lang=en-US&.intl=us)
 ---
 id: e-signature
 question: |
@@ -1560,9 +1673,17 @@ question: |
 subquestion: |
   This program can put “**/s/ ${users[0].name.full(middle='full')}**” where you would sign your name. The court will accept this as your signature.
 
-  If you do not add your **{e-signature}** now, you must sign your forms before you file them.
+  If you do not add your **{e-signature}**, you must sign your paper forms before you file them.
 
-  ${ collapse_template(signature_help) }  
+  <div class="alert alert-info ilao-info" role="alert">
+    <h6 class="alert-heading">What it means to sign your forms</h6>
+    <p>By signing your <i>Request for Name Change</i>, you are certifying that:</p>
+    <p><ul>
+      <li>Everything on the forms is true and correct, and</li>
+      <li>You understand that making a false statement on the form is perjury, which can result in criminal penalties.</li>
+    </ul></p>
+    <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
+  </div>
 fields:
   - "Add e-signature?": e_signature
     datatype: yesnoradio
@@ -1570,16 +1691,16 @@ terms:
   - "e-signature": |
       An e-signature is an electronic signature. It is a digital version of a signature that has the same effect as a hand-written signature. 
 ---
-template: signature_help
-subject: |
-  **What does it mean to sign the forms?**
-content: |  
-  By signing your forms, the person signing is certifying that:
-  
-  * Everything on the form is true and correct, and
-  * They understand that making a false statement on the form is perjury, which can result in criminal penalties.
-  
-  See the [**Code of Civil Procedure, 735 ILCS 5/1-109**](https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm), for more information.
+#template: signature_help
+#subject: |
+#  **What does it mean to sign the forms?**
+#content: |  
+#  By signing your forms, the person signing is certifying that:
+#  
+#  * Everything on the form is true and correct, and
+#  * They understand that making a false statement on the form is perjury, which can result in criminal penalties.
+#  
+#  See the [**Code of Civil Procedure, 735 ILCS 5/1-109**](https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm), for more information.
 ---
 id: spouse e-signature
 question: |
@@ -1587,16 +1708,23 @@ question: |
 subquestion: |
   This program can put “**/s/ ${users[1].name.full(middle='full')}**” where they would sign their name. The court will accept this as their signature.
 
-  If they do not add their **{e-signature}** now, they must sign your forms before filing.
-
-  ${ collapse_template(signature_help) }  
+  If they do not add their **{e-signature}** now, they must sign the paper forms before you file them.
+  
+  <div class="alert alert-info ilao-info" role="alert">
+    <h6 class="alert-heading">What it means to sign the forms</h6>
+    <p>By signing the <i>Request for Name Change</i>, your spouse is certifying that:</p>
+    <p><ul>
+      <li>Everything on the forms is true and correct, and</li>
+      <li>They understand that making a false statement on the form is perjury, which can result in criminal penalties.</li>
+    </ul></p>
+    <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
+  </div>
 fields:
   - "Add spouse's e-signature?": e_signature_spouse
     datatype: yesnoradio
 terms:
   - "e-signature": |
       An e-signature is an electronic signature. It is a digital version of a signature that has the same effect as a hand-written signature. 
-
 ---
 depends on:
   - trial_court_index
@@ -1645,6 +1773,17 @@ subquestion: |
 
   Visit **[Illinois Court Help](https://www.ilcourthelp.gov/)**, or you can call or text (833) 411-1121 for assistance.
 ---
+id: forms assembling
+continue button field: forms_assembling
+question: |
+  Almost done
+subquestion: |
+  After you click **Next**, it may take a few moments to finish making your forms.
+  
+  ###### You do not need to refresh your screen. Hang in there!
+  
+  [NEWLINE]
+---
 id: get docs screen
 event: get_docs_screen
 question: |
@@ -1691,6 +1830,7 @@ objects:
   - additional_criminal_history: ALDocument.using(title="Additional Criminal History", filename="name_change_additional_criminal_history.pdf", has_addendum=False)  
   - spouse_additional_criminal_history: ALDocument.using(title="Additional Criminal History", filename="name_change_additional_criminal_history.pdf", has_addendum=False)  
   - order: ALDocument.using(title="Order for name change", filename="order.pdf", has_addendum=False)
+  - spouse_order: ALDocument.using(title="Spouse's Order for name change", filename="order_spouse.pdf", has_addendum=False)
   - motion_to_waive_notice: ALDocument.using(title="Motion to Waive Notice and Publication", filename="motion_to_waive_notice.pdf", has_addendum=False)
   - order_to_waive_notice: ALDocument.using(title="Order to Waive Notice and Publication", filename="order_to_waive_notice.pdf", has_addendum=False)
   - spouse_motion_to_waive_notice: ALDocument.using(title="Spouse's Motion to Waive Notice and Publication", filename="motion_to_waive_notice_spouse.pdf", has_addendum=False)
@@ -1706,6 +1846,7 @@ code: |
   additional_criminal_history.enabled = False
   spouse_additional_criminal_history.enabled = False
   order.enabled = True
+  spouse_order.enabled = False
   motion_to_waive_notice.enabled = False
   order_to_waive_notice.enabled = False
   spouse_motion_to_waive_notice.enabled = False
@@ -1717,6 +1858,7 @@ code: |
     if users[0].convictions.number() > 3:
       additional_criminal_history.enabled = True
   if change_spouse_name == "Yes":    
+    spouse_order.enabled = True
     if users[1].felonies or users[1].registry or users[1].id_theft:
       if users[1].convictions.number() > 3:
         spouse_additional_criminal_history.enabled = True
@@ -1734,11 +1876,10 @@ code: |
       spouse_order_to_waive_notice.enabled = True
     else:  
       publication_notice_spouse.enabled = True
-
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, publication_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, publication_notice_spouse, order], filename="name_change_request.pdf", title="All forms")
-  - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, order], filename="name_change_request.pdf", title="Name change request")
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, publication_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, publication_notice_spouse, order, spouse_order], filename="name_change_request.pdf", title="All forms")
+  - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, order, spouse_order], filename="name_change_request.pdf", title="Name change request")
 ---
 objects:
   - request_pdf_bundle: ALDocumentBundle.using(elements=[request, additional_criminal_history, spouse_additional_criminal_history], filename="request.pdf", title="Request for name change")
@@ -2068,67 +2209,6 @@ attachment:
         No
         % endif
         % endif
-    - "user_offense_name_13": ${ users[0].convictions[12].name.text }
-    - "user_conviction_date_13": ${ format_date(users[0].convictions[12].date, format='MM/dd/yyyy') }
-    - "user_sentence_13": ${ users[0].convictions[12].sentence }
-    - "user_sentence_completed_date_13": ${ format_date(users[0].convictions[12].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_13": |
-        % if users[0].convictions[12].name.text != "":
-        % if users[0].convictions[12].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-    - "user_offense_name_14": ${ users[0].convictions[13].name.text }
-    - "user_conviction_date_14": ${ format_date(users[0].convictions[13].date, format='MM/dd/yyyy') }
-    - "user_sentence_14": ${ users[0].convictions[13].sentence }
-    - "user_sentence_completed_date_14": ${ format_date(users[0].convictions[13].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_14": |
-        % if users[0].convictions[13].name.text != "":
-        % if users[0].convictions[13].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-    - "user_offense_name_15": ${ users[0].convictions[14].name.text }
-    - "user_conviction_date_15": ${ format_date(users[0].convictions[14].date, format='MM/dd/yyyy') }
-    - "user_sentence_15": ${ users[0].convictions[14].sentence }
-    - "user_sentence_completed_date_15": ${ format_date(users[0].convictions[14].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_15": |
-        % if users[0].convictions[14].name.text != "":
-        % if users[0].convictions[14].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-    - "user_offense_name_16": ${ users[0].convictions[15].name.text }
-    - "user_conviction_date_16": ${ format_date(users[0].convictions[15].date, format='MM/dd/yyyy') }
-    - "user_sentence_16": ${ users[0].convictions[15].sentence }
-    - "user_sentence_completed_date_16": ${ format_date(users[0].convictions[15].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_16": |
-        % if users[0].convictions[15].name.text != "":
-        % if users[0].convictions[15].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-    - "user_offense_name_17": ${ users[0].convictions[16].name.text }
-    - "user_conviction_date_17": ${ format_date(users[0].convictions[16].date, format='MM/dd/yyyy') }
-    - "user_sentence_17": ${ users[0].convictions[16].sentence }
-    - "user_sentence_completed_date_17": ${ format_date(users[0].convictions[16].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_17": |
-        % if users[0].convictions[16].name.text != "":
-        % if users[0].convictions[16].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-
 ---
 attachment:
   variable name: spouse_additional_criminal_history[i]
@@ -2243,66 +2323,6 @@ attachment:
     - "user_pardoned_12": |
         % if users[1].convictions[11].name.text != "":
         % if users[1].convictions[11].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-    - "user_offense_name_13": ${ users[1].convictions[12].name.text }
-    - "user_conviction_date_13": ${ format_date(users[1].convictions[12].date, format='MM/dd/yyyy') }
-    - "user_sentence_13": ${ users[1].convictions[12].sentence }
-    - "user_sentence_completed_date_13": ${ format_date(users[1].convictions[12].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_13": |
-        % if users[1].convictions[12].name.text != "":
-        % if users[1].convictions[12].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-    - "user_offense_name_14": ${ users[1].convictions[13].name.text }
-    - "user_conviction_date_14": ${ format_date(users[1].convictions[13].date, format='MM/dd/yyyy') }
-    - "user_sentence_14": ${ users[1].convictions[13].sentence }
-    - "user_sentence_completed_date_14": ${ format_date(users[1].convictions[13].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_14": |
-        % if users[1].convictions[13].name.text != "":
-        % if users[1].convictions[13].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-    - "user_offense_name_15": ${ users[1].convictions[14].name.text }
-    - "user_conviction_date_15": ${ format_date(users[1].convictions[14].date, format='MM/dd/yyyy') }
-    - "user_sentence_15": ${ users[1].convictions[14].sentence }
-    - "user_sentence_completed_date_15": ${ format_date(users[1].convictions[14].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_15": |
-        % if users[1].convictions[14].name.text != "":
-        % if users[1].convictions[14].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-    - "user_offense_name_16": ${ users[1].convictions[15].name.text }
-    - "user_conviction_date_16": ${ format_date(users[1].convictions[15].date, format='MM/dd/yyyy') }
-    - "user_sentence_16": ${ users[1].convictions[15].sentence }
-    - "user_sentence_completed_date_16": ${ format_date(users[1].convictions[15].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_16": |
-        % if users[1].convictions[15].name.text != "":
-        % if users[1].convictions[15].pardoned == True:
-        Yes
-        % else:
-        No
-        % endif
-        % endif
-    - "user_offense_name_17": ${ users[1].convictions[16].name.text }
-    - "user_conviction_date_17": ${ format_date(users[1].convictions[16].date, format='MM/dd/yyyy') }
-    - "user_sentence_17": ${ users[1].convictions[16].sentence }
-    - "user_sentence_completed_date_17": ${ format_date(users[1].convictions[16].completed_date, format='MM/dd/yyyy') }
-    - "user_pardoned_17": |
-        % if users[1].convictions[16].name.text != "":
-        % if users[1].convictions[16].pardoned == True:
         Yes
         % else:
         No
@@ -2477,6 +2497,17 @@ attachment:
   fields:
     - "trial_court_county": ${ trial_court.address.county }
     - "user": ${ users[0].name.full(middle="full") }
+---
+attachment:
+  variable name: spouse_order[i]
+  name: spouse_order
+  filename: spouse_order
+  skip undefined: True
+  editable: False
+  pdf template file: name_change_order.pdf
+  fields:
+    - "trial_court_county": ${ trial_court.address.county }
+    - "user": ${ users[1].name.full(middle="full") }
 ---
 attachment:
   variable name: order_to_waive_notice[i]
@@ -2947,7 +2978,7 @@ question: |
 subquestion: |
   ${ users[i].convictions.table }
 
-  % if users[i].convictions.number_gathered() < 17:
+  % if users[i].convictions.number_gathered() < 12:
   ${ users[i].convictions.add_action() }
   % endif
 ---
