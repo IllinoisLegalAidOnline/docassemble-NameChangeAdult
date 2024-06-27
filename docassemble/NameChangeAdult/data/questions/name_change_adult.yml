@@ -180,6 +180,11 @@ code: |
   	'started_interview': True, 
   	}
     
+  try:
+    stuff_to_snapshot['ip_address'] = device(ip=True)
+  except:
+    pass
+
   stuff_to_snapshot['zip'] = showifdef('users[0].address.zip')
 
   stuff_to_snapshot['downloaded_forms'] = showifdef('forms_assembling')
@@ -1593,7 +1598,7 @@ subquestion: |
   
   If you do not want to list a phone number on your forms, leave it blank.
 
-  If you have an email address, you must list it. Be sure to check your email daily, otherwise you may miss important information about your case.
+  If you have an email address, you must list it. Be sure to check your email daily, otherwise you may miss important court documents or information about your case.
 
   ${ collapse_template(contact_info_help) }  
 fields:  
@@ -1623,7 +1628,7 @@ subquestion: |
   
   If your spouse does not want to list a phone number on your forms, leave it blank.
 
-  If your spouse has an email address, they must list it. They should check their email daily, otherwise they may miss important information about their case.
+  If your spouse has an email address, they must list it. They should check their email daily, otherwise they may miss important court documents or information about their case.
 
   ${ collapse_template(spouse_contact_info_help) }  
 fields:  
@@ -2971,8 +2976,9 @@ review:
       ${ word(yesno(e_signature_spouse)) }
     show if: change_spouse_name == 'Yes'
 ---
-id: convictions revisit
+id: convictions revisit review screen
 continue button field: users[i].convictions.revisit
+section: About you
 question: |
   Edit the convictions
 subquestion: |
@@ -2992,8 +2998,9 @@ columns:
 delete buttons: True
 confirm: True
 ---
-id: edit convictions
+id: edit convictions review screen
 continue button field: x.review_convictions_details
+section: About you
 generic object: DAObject
 question: |
   Edit conviction details
@@ -3016,7 +3023,8 @@ review:
       ${ word(yesno(x.pardoned)) }
 continue button label: Next
 ---
-id: protective orders revisit
+id: protective orders revisit review screen
+section: Notice and publication
 continue button field: orders.revisit
 question: |
   Edit the protective orders
@@ -3041,8 +3049,9 @@ edit:
 delete buttons: True
 confirm: True
 ---
-id: spouse protective orders revisit
+id: spouse protective orders revisit review screen
 continue button field: spouse_orders.revisit
+section: Notice and publication
 question: |
   Edit your spouse's protective orders
 subquestion: |
