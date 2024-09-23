@@ -1164,8 +1164,8 @@ subquestion: |
 fields:
   - Notice and publication would be a hardship because (optional):: hardship_text
     input type: area
-    rows: 11
-    maxlength: 500
+    rows: 14
+    maxlength: 700
     required: False
 ---
 id: spouse hardship text
@@ -1183,8 +1183,8 @@ subquestion: |
 fields:
   - Notice and publication would be a hardship because (optional):: spouse_hardship_text
     input type: area
-    rows: 11
-    maxlength: 500
+    rows: 14
+    maxlength: 700
     required: False
 ---
 template: child_notice_waiver_example
