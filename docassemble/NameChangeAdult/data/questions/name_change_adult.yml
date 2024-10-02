@@ -524,6 +524,8 @@ subquestion: |
   If you have a divorce judgment and want to change your name to a former or maiden name, you do not need to publish notice.
   
   If your divorce judgment gives you permission to return to using your former or maiden name, you do not need to file a separate name change request. The divorce judgment should work as an effective court order to change identification.
+
+  You should be able to get a copy of your divorce judgment from the Circuit Clerk's office or website. For more information, see ILAO's article on [**How to get copies of your court records**](https://www.illinoislegalaid.org/node/33186).
 fields:
   - no label: users[0].after_divorce
     datatype: yesnoradio
@@ -533,6 +535,8 @@ question: |
   Divorce details
 subquestion: |
   Enter information about the divorce judgment.
+
+  You should be able to get a copy of your divorce judgment from the Circuit Clerk's office or website. For more information, see ILAO's article on [**How to get copies of your court records**](https://www.illinoislegalaid.org/node/33186).
 fields:
   - Date of divorce judgment: divorce_date
     datatype: date
