@@ -1454,15 +1454,12 @@ subquestion: |
 
   [FILE name_change_hearing_details.png, 100%, How to Attend Hearing section of Publication notice]
 ---
-
-
----
 id: impoundment intro
 continue button field: impoundment_intro
 question: |
   Keeping your name change court file private
 subquestion: |
-  You can ask that the court impound you name change court file. This means the court records will be kept private. Only the people involved in the case, the judge, and the court clerk can see them unless the judge gives someone else permission.
+  You can ask that the court impound your name change court file. This means the court records will be kept private. Only the people involved in the case, the judge, and the court clerk can see them unless the judge gives someone else permission.
 ---
 id: impound records question
 question: |
@@ -1480,6 +1477,10 @@ subquestion: |
   * Granted special immigrant status by the United States Citizenship and Immigration Service,
   * Survivors of reparative or conversion therapy, and
   * Granted asylum in this country.  
+
+  % if change_spouse_name == "Yes":
+  **Note:** If your spouse wants to keep the court file private, this request can work for either or both of you.
+  % endif
 fields:
   - Want to keep your court file private?: request_impoundment
     datatype: yesnoradio
@@ -1488,12 +1489,13 @@ id: impoundment reasons
 question: |
   Why do you want your name change court file to be private?
 subquestion: |
-  Explain why making your court file public would be a hardship for you and have a negative impact on your health or safety.
+  Your Motion will explain why making your court file public would be a hardship for you and have a negative impact on your health or safety.
 
   ${ collapse_template(hardship_categories) }
-  
-  **Note:** When you file your forms, you may attach supporting documents like court orders to help explain why it would be a hardship. Additional information is not required. The Motion should be enough.
-  
+
+  % if change_spouse_name == "Yes":
+  **Note:** If your spouse wants to keep the court file private, answer this question for either or both of you.
+  % endif
 fields:
   - Having my court file public would be a hardship because (check all that apply):: impoundment_reasons
     datatype: checkboxes
@@ -1552,8 +1554,9 @@ question: |
 subquestion: |
   You should file or e-file your *Motion to Impound (Make Court Records Private)* at the same time as your name change request. The judge will review the Motion when they consider your name change request.
 
-  **Note:** Until the Motion is granted or if the Motion is denied, the name change request will be a public record.
+  When you file your forms, you may attach supporting documents like court orders to help explain why it would be a hardship. Additional information is not required. The Motion should be enough.
 
+  **Note:** Until the Motion is granted or if the Motion is denied, the name change request will be a public record.
 ---
 id: trial court county
 continue button field: case_county
@@ -1657,66 +1660,6 @@ fields:
       states_list()
     default: IL      
   - ZIP code: users[1].address.zip
----
-#id: phone number
-#question: |
-#  What is your phone number?
-#subquestion: |
-#  If you do not want to list your phone number on your forms, leave this blank.
-#fields:
-#  - Phone: users[0].phone_number
-#    datatype: al_international_phone
-#    required: False
-#---
-#id: spouse phone number
-#question: |
-#  What is your spouse's phone number?
-#subquestion: |
-#  If you do not want to list their phone number on the forms, leave this blank.
-#fields:
-#  - Spouse's phone: users[1].phone_number
-#    datatype: al_international_phone
-#    required: False
-#---
-#id: notice by email
-#question: |
-#  Do you have an email address?
-#subquestion: |
-#  If you have an email address, you must list it so the court clerk can contact you about this case.
-#fields:
-#  - "Email?": users[0].email_notice
-#    datatype: yesnoradio
-#---
-#id: spouse notice by email
-#question: |
-#  Does your spouse have an email address?
-#subquestion: |
-#  If your spouse has an email address, you must list it so the court clerk can contact them about this case.
-#fields:
-#  - "Spouse email?": users[1].email_notice
-#    datatype: yesnoradio
-#---
-#id: email address
-#question: |
-#  What email address do you want to list on your court forms?
-#subquestion: |
-#  If you do not want to enter your personal email address, you can create a new email account to get email about your case.
-#  
-#  Be sure to check this email daily, otherwise you may miss important information about your case.
-#fields:
-#  - Email address: users[0].email    
-#    datatype: email
-#---
-#id: spouse email address
-#question: |
-#  What email address does your spouse want to list on the court forms?
-#subquestion: |
-#  If they do not want to enter their personal email address, they can create a new email account to get email about the case. 
-#  
-#  It is important to check this email daily or they may miss important information about the case.
-#fields:
-#  - Spouse's email address: users[1].email    
-#    datatype: email
 ---
 id: your contact information
 question: |
@@ -1825,17 +1768,6 @@ fields:
 terms:
   - "e-signature": |
       An e-signature is an electronic signature. It is a digital version of a signature that has the same effect as a hand-written signature. 
----
-#template: signature_help
-#subject: |
-#  **What does it mean to sign the forms?**
-#content: |  
-#  By signing your forms, the person signing is certifying that:
-#  
-#  * Everything on the form is true and correct, and
-#  * They understand that making a false statement on the form is perjury, which can result in criminal penalties.
-#  
-#  See the [**Code of Civil Procedure, 735 ILCS 5/1-109**](https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm), for more information.
 ---
 id: spouse e-signature
 question: |
