@@ -3678,7 +3678,22 @@ review:
       % elif cook_district == "20":
       ${ "Sixth Municipal District, 16501 South Kedzie Parkway, Markham" }
       % endif      
-    show if: trial_court_index == -1      
+    show if: trial_court_index == -1
+  - Edit: request_impoundment
+    button: |
+      **Do you want to keep your name change court file private?**
+      ${ word(yesno(request_impoundment)) }
+  - Edit: impoundment_reasons
+    button: |
+      **Having your court file public would be a hardship because:**
+
+      % if impoundment_reasons['member']:
+      *  I am at higher risk of hardship based on my identity, experience, or status.
+      % endif
+      % if impoundment_reasons['other']:
+      * I have other reasons including fear of physical harm or discrimination.
+      % endif
+    show if: request_impoundment
   - Edit: e_signature
     button: |
       **Do you want to add your e-signature to your forms?**
