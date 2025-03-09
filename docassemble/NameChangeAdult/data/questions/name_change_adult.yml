@@ -155,12 +155,15 @@ code: |
   #    if cook_district == "15":
   #      district_1
   #  courthouse_info
+
+  if case_county == "Cook":
+    cook_filing_info
+  
   impoundment_intro
   if request_impoundment:
     impoundment_reasons
-    if case_county == "Cook":
-      cook_impoundment_info
     motion_info
+
   hide_address
   users[0].address.address
   users[0].phone_number
@@ -191,6 +194,8 @@ code: |
   stuff_to_snapshot['zip'] = showifdef('users[0].address.zip')
 
   stuff_to_snapshot['downloaded_forms'] = showifdef('forms_assembling')
+
+  stuff_to_snapshot['downloaded_forms'] = showifdef('request_impoundment')
   
   store_variables_snapshot(
   	data=stuff_to_snapshot, persistent=True
@@ -1534,8 +1539,8 @@ content: |
   * Survivors of reparative or conversion therapy, and
   * Granted asylum in this country.
 ---
-id: cook impoundment info
-continue button field: cook_impoundment_info
+id: cook filing info
+continue button field: cook_filing_info
 question: |
   Special Cook County instructions
 subquestion: |
@@ -1559,7 +1564,6 @@ subquestion: |
   **Note:** Until the Motion is granted or if the Motion is denied, the name change request will be a public record.
 ---
 id: trial court county
-continue button field: case_county
 question: |
   Where will you file the name change?
 fields:
