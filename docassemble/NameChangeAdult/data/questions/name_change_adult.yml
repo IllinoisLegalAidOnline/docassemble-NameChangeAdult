@@ -37,7 +37,6 @@ sections:
   - section_intro: Start
   - section_about_you: About you
   - section_spouse: About your spouse (optional)
-  - section_notice: Notice and publication
   - section_filing_details: Filing details
   - section_download: Download  
 ---
@@ -59,17 +58,20 @@ code: |
     not_adult
   users[0].birthplace.city
   if users[0].is_resident == True:
-    if date_difference(starting=users[0].resident_date , ending=today() ).years < 0.5:
+    if date_difference(starting=users[0].resident_date , ending=today() ).years < 0.25:
       not_resident
   else:
     not_resident
   
   users[0].name.first
   users[0].new.name.first
+  if users[0].after_divorce == True:
+    divorce_date
   users[0].criminal_history_intro
   users[0].pending_arrests
   users[0].pending_charges
   users[0].misdemeanors
+  users[0].misdemeanors_outside_il
   users[0].felonies
   users[0].registry
   if users[0].registry and users[0].registry_exceptions.all_false():
@@ -91,7 +93,7 @@ code: |
     else:
       users[1].birthplace.city
       if users[1].is_resident == True:
-        if date_difference(starting=users[1].resident_date , ending=today() ).years < 0.5:
+        if date_difference(starting=users[1].resident_date , ending=today() ).years < 0.25:
           spouse_not_resident_kickout
           spouse_resident_check
         else:
@@ -101,6 +103,7 @@ code: |
           users[1].pending_arrests
           users[1].pending_charges
           users[1].misdemeanors
+          users[1].misdemeanors_outside_il
           users[1].felonies
           users[1].registry
           if users[1].registry and users[1].registry_exceptions.all_false():
@@ -118,54 +121,57 @@ code: |
         spouse_resident_check
          
   
-  set_progress(75)
-  nav.set_section('section_notice')
-  notice_intro
-  if users[0].after_divorce == True:
-    divorce_date
-  if users[0].after_divorce == False:
-    if request_waiver == True:
-      if waiver_reason['order'] == True:
-        if protective_order.any_true():
-          orders.gather()
-      hardship_text
-
-  if change_spouse_name == "Yes":
-    if spouse_request_waiver == True:
-      if spouse_waiver_reason['order'] == True:
-        if spouse_protective_order.any_true():
-          spouse_orders.gather()
-      spouse_hardship_text
-
-  if users[0].after_divorce == False:
-    if request_waiver == False:
-      publication_intro
-      complete_publication_notice
-
-  if change_spouse_name == "Yes":
-    if spouse_request_waiver == False:
-      publication_intro
-      complete_publication_notice
+  #  set_progress(75)
+  #  nav.set_section('section_notice')
+  #  notice_intro
+  #  if users[0].after_divorce == False:
+  #    if request_waiver == True:
+  #      if waiver_reason['order'] == True:
+  #        if protective_order.any_true():
+  #          orders.gather()
+  #      hardship_text
+  #
+  #  if change_spouse_name == "Yes":
+  #    if spouse_request_waiver == True:
+  #      if spouse_waiver_reason['order'] == True:
+  #        if spouse_protective_order.any_true():
+  #          spouse_orders.gather()
+  #      spouse_hardship_text
+  #
+  #  if users[0].after_divorce == False:
+  #    if request_waiver == False:
+  #      publication_intro
+  #      complete_publication_notice
+  #
+  #  if change_spouse_name == "Yes":
+  #    if spouse_request_waiver == False:
+  #      publication_intro
+  #      complete_publication_notice
 
   set_progress(90)
   nav.set_section('section_filing_details')
-  if trial_court_index == -1:
-    cook_district
-    if cook_district == "15":
-      district_1
-  courthouse_info
+  #  if trial_court_index == -1:
+  #    cook_district
+  #    if cook_district == "15":
+  #      district_1
+  #  courthouse_info
+
+  if case_county == "Cook":
+    cook_filing_info
+  
+  impoundment_intro
+  if request_impoundment:
+    impoundment_reasons
+    motion_info
+
   hide_address
   users[0].address.address
   users[0].phone_number
-  #if users[0].email_notice == True:
-  #  users[0].email
   e_signature
   if change_spouse_name == "Yes":
     spouse_hide_address
     users[1].address.address
     users[1].phone_number
-    #if users[1].email_notice == True:
-    #  users[1].email
     e_signature_spouse
 
   set_progress(100)
@@ -188,6 +194,8 @@ code: |
   stuff_to_snapshot['zip'] = showifdef('users[0].address.zip')
 
   stuff_to_snapshot['downloaded_forms'] = showifdef('forms_assembling')
+
+  stuff_to_snapshot['downloaded_forms'] = showifdef('request_impoundment')
   
   store_variables_snapshot(
   	data=stuff_to_snapshot, persistent=True
@@ -221,7 +229,7 @@ subquestion: |
   To change your name in Illinois you must: 
 
   * Be at least 18 years old, and 
-  * Have lived in Illinois for at least 6 months.
+  * Have lived in Illinois for at least three months.
   
   You will also need details about your criminal history. If your spouse is requesting a name change, they must also meet these requirements.
 
@@ -246,7 +254,7 @@ question: |
 subquestion: |
   After you download your forms, you must file them with the court in the county where you live. This program **does not** file your forms for you.
   
-  When you file your forms, the court clerk will give you a court date. Usually, you have to publish notice of your name change in a newspaper where you live for 3 weeks. However, if publishing notice would be a hardship to you, including risking your health or safety, you can ask the judge to skip that step by filing a motion to waive publication. This program will help you make the forms you need either way.
+  When you file your forms, the court clerk will give you a court date. Records of your name change request, like most court cases, will become public unless you ask for them to be made private. This program will help you make the forms if you want to keep your name change out of the public record.
   
   To learn more, read the "How to Change Your Name" instructions you can download at the end of this program. 
 ---
@@ -330,9 +338,9 @@ fields:
 ---
 id: user continuous illinois residence
 question: |
-  Have you lived in Illinois for the past 6 months?
+  Have you lived in Illinois for the past three months?
 subquestion: |
-  Answering **Yes** means that you have lived in Illinois for 6 months without taking a break to live in another state or country.
+  Answering **Yes** means that you have lived in Illinois for three months without taking a break to live in another state or country.
 fields:
   - no label: users[0].is_resident
     datatype: yesnoradio
@@ -348,9 +356,9 @@ fields:
 ---
 id: spouse continuous illinois residence
 question: |
-  Has your spouse lived in Illinois for the past 6 months?
+  Has your spouse lived in Illinois for the past three months?
 subquestion: |
-  Answering **Yes** means that your spouse has lived in Illinois without taking a break to live in another state or country.
+  Answering **Yes** means that your spouse has lived in Illinois for three months without taking a break to live in another state or country.
 fields:
   - no label: users[1].is_resident
     datatype: yesnoradio
@@ -374,7 +382,7 @@ subquestion: |
   
   Residency date: ${format_date( users[0].resident_date )}
   
-  Resident at least 6 months: ${ date_difference(starting=users[0].resident_date , ending=today() ).years > 0.5 }
+  Resident at least 3 months: ${ date_difference(starting=users[0].resident_date , ending=today() ).years > 0.25 }
 
 
 ---
@@ -383,7 +391,7 @@ event: not_resident
 question: |
   Sorry
 subquestion: |
-  This program is only for people who have lived in Illinois continuously for 6 months.
+  This program is only for people who have lived in Illinois continuously for three months.
 
   Click **Back** if you made a mistake. Or you can talk with a lawyer to discuss your options. 
 
@@ -397,7 +405,7 @@ continue button field: spouse_not_resident_kickout
 question: |
   Sorry
 subquestion: |
-  Your spouse must have lived in Illinois continuously for 6 months.
+  Your spouse must have lived in Illinois continuously for three months.
   
   This program cannot make name change forms for your spouse. You can talk with a lawyer to discuss your options. You can use the [**Legal Services Corporation website**](https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help) to find a legal aid organization in another state. Or you can use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
   
@@ -539,9 +547,9 @@ subquestion: |
   You should be able to get a copy of your divorce judgment from the Circuit Clerk's office or website. For more information, see ILAO's article on [**How to get copies of your court records**](https://www.illinoislegalaid.org/node/33186).
 fields:
   - Date of divorce judgment: divorce_date
-    datatype: date
-    min: ${ users[0].birthdate.format("yyyy-MM-dd") }
-    max: ${ today().format("yyyy-MM-dd") }
+    datatype: ThreePartsDate
+    alMin: ${ users[0].birthdate.format("yyyy-MM-dd") }
+    alMax: ${ today().format("yyyy-MM-dd") }
   - Was the court that ordered the divorce in the United States?: divorce_in_us
     datatype: yesnoradio
   - County: divorce_location.county
@@ -653,15 +661,15 @@ generic object: ALPeopleList
 question: |
   % if interview_type == 'adult':
     % if i == 0:
-    Do you have any convictions or were you placed on probation for any misdemeanors?
+    Do you have any convictions or were you placed on probation for any misdemeanors in Illinois?
     % else:
-    Does your spouse have any convictions or were they placed on probation for any misdemeanors?
+    Does your spouse have any convictions or were they placed on probation for any misdemeanors in Illinois?
     % endif
   % else:
   Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for any misdemeanors?
   % endif
 subquestion: |
-  These can be misdemeanors in Illinois or any other state.
+  We will ask about misdemeanors in other states on another screen.
 fields:
   - no label: x[i].misdemeanors
     datatype: yesnoradio
@@ -669,6 +677,29 @@ fields:
     datatype: yesnoradio
     show if:
       variable: x[i].misdemeanors
+      is: True
+---
+id: misdemeanors outside il
+generic object: ALPeopleList
+question: |
+  % if interview_type == 'adult':
+    % if i == 0:
+    Do you have any convictions or were you placed on probation for any misdemeanors outside Illinois?
+    % else:
+    Does your spouse have any convictions or were they placed on probation for any misdemeanors outside Illinois?
+    % endif
+  % else:
+  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for any misdemeanors?
+  % endif
+subquestion: |
+  **Note:** These do not include misdemeanors in Illinois.
+fields:
+  - no label: x[i].misdemeanors_outside_il
+    datatype: yesnoradio
+  - Were all of these misdemeanors pardoned?: x[i].misdemeanor_outside_il_pardon
+    datatype: yesnoradio
+    show if:
+      variable: x[i].misdemeanors_outside_il
       is: True
 ---
 id: felonies
@@ -1427,17 +1458,122 @@ subquestion: |
   [FILE name_change_court_date.png, 100%, Court Date Information section of Publication notice]
 
   [FILE name_change_hearing_details.png, 100%, How to Attend Hearing section of Publication notice]
+---
+id: impoundment intro
+continue button field: impoundment_intro
+question: |
+  Keeping your name change court file private
+subquestion: |
+  You can ask that the court impound your name change court file. This means the court records will be kept private. Only the people involved in the case, the judge, and the court clerk can see them unless the judge gives someone else permission.
+---
+id: impound records question
+question: |
+  Do you want to keep your name change court file private?
+subquestion: |
+  You can ask to make your court file private if it would be a hardship for you and have a negative impact on your health or safety. This request is called a *Motion to Impound (Make Court Records Private)*.
+  
+  Some people are at higher risk of hardship if their name change court file is part of the public record. These include people who are:
 
+  * Transgender,
+  * Adoptees,
+  * Survivors of domestic or intimate partner violence,
+  * Survivors of gender-based violence,
+  * Survivors of human trafficking,
+  * Granted special immigrant status by the United States Citizenship and Immigration Service,
+  * Survivors of reparative or conversion therapy, and
+  * Granted asylum in this country.  
+
+  % if change_spouse_name == "Yes":
+  **Note:** If your spouse wants to keep the court file private, this request can work for either or both of you.
+  % endif
+fields:
+  - Want to keep your court file private?: request_impoundment
+    datatype: yesnoradio
+---
+id: impoundment reasons
+question: |
+  Why do you want your name change court file to be private?
+subquestion: |
+  Your Motion will explain why making your court file public would be a hardship for you and have a negative impact on your health or safety.
+
+  ${ collapse_template(hardship_categories) }
+
+  % if change_spouse_name == "Yes":
+  **Note:** If your spouse wants to keep the court file private, answer this question for either or both of you.
+  % endif
+fields:
+  - Having my court file public would be a hardship because (check all that apply):: impoundment_reasons
+    datatype: checkboxes
+    minlength: 1
+    choices:
+      - I am at higher risk of hardship based on my identity, experience, or status.: member
+        help: |
+          Some people are at higher risk of hardship if their name change court file is part of the public record. These include people who are:
+
+          * Transgender,
+          * Adoptees,
+          * Survivors of domestic or intimate partner violence,
+          * Survivors of gender-based violence,
+          * Survivors of human trafficking,
+          * Granted special immigrant status by the United States Citizenship and Immigration Service,
+          * Survivors of reparative or conversion therapy, and
+          * Granted asylum in this country.  
+      - I have other reasons including fear of physical harm, discrimination, harassment, bullying, or threats of violence.: other
+    label above field: True
+    validation messages:
+      minlength: |
+        Please select at least one or click < Back if none apply.
+---
+template: hardship_categories
+subject: |
+  **Types of people who are at higher risk of hardship**
+content: |  
+  Some people are at higher risk of hardship if their name change court file is part of the public record. These include people who are:
+
+  * Transgender,
+  * Adoptees,
+  * Survivors of domestic or intimate partner violence,
+  * Survivors of gender-based violence,
+  * Survivors of human trafficking,
+  * Granted special immigrant status by the United States Citizenship and Immigration Service,
+  * Survivors of reparative or conversion therapy, and
+  * Granted asylum in this country.
+---
+id: cook filing info
+continue button field: cook_filing_info
+question: |
+  Special Cook County instructions
+subquestion: |
+  In Cook County, the Court requires all petitioners to e-file, as an exhibit, a photo or scanned copy of your birth certificate and a photo ID. If your photo ID does not have a Cook County address, you need to provide additional proof of address (such as a lease or a bill).
+  
+  **Note:** If your birth certificate is in a language other than English, the judge may ask you to provide a certified translation of your birth certificate. Birth certificates can usually be ordered from the agency in your state or country of birth that oversees vital records. If it is not possible for you to get a birth certificate, the court will likely ask you to provide additional documentation.
+  
+  You can redact any sensitive information. Save exhibits as a PDF file and be in portrait orientation.
+  
+  This information will be included on the instructions you download at the end of the program. If you have any questions about e-filing or paper filing, visit **[Illinois Court Help](https://www.ilcourthelp.gov/)**, or call or text (833) 411-1121 for assistance.  
+---
+id: motion to impound info
+continue button field: motion_info
+question: |
+  About the Motion to Impound
+subquestion: |
+  You should file or e-file your *Motion to Impound (Make Court Records Private)* at the same time as your name change request. The judge will review the Motion when they consider your name change request.
+
+  When you file your forms, you may attach supporting documents like court orders to help explain why it would be a hardship. Additional information is not required. The Motion should be enough.
+
+  **Note:** Until the Motion is granted or if the Motion is denied, the name change request will be a public record.
 ---
 id: trial court county
-continue button field: case_county
 question: |
-  In which county will you file the name change?
+  Where will you file the name change?
 fields:
-  - no label: trial_court_index
-    datatype: integer
-    code: |
-      court_county_lookup()
+  - County: case_county
+    code:
+      court_list._load_courts()["address_county"].unique()
+#  - County: trial_court_index
+#    datatype: integer
+#    code: |
+#      court_county_lookup()
 ---
 code: |
   def court_county_lookup(lowercase=False):
@@ -1531,66 +1667,6 @@ fields:
       states_list()
     default: IL      
   - ZIP code: users[1].address.zip
----
-#id: phone number
-#question: |
-#  What is your phone number?
-#subquestion: |
-#  If you do not want to list your phone number on your forms, leave this blank.
-#fields:
-#  - Phone: users[0].phone_number
-#    datatype: al_international_phone
-#    required: False
-#---
-#id: spouse phone number
-#question: |
-#  What is your spouse's phone number?
-#subquestion: |
-#  If you do not want to list their phone number on the forms, leave this blank.
-#fields:
-#  - Spouse's phone: users[1].phone_number
-#    datatype: al_international_phone
-#    required: False
-#---
-#id: notice by email
-#question: |
-#  Do you have an email address?
-#subquestion: |
-#  If you have an email address, you must list it so the court clerk can contact you about this case.
-#fields:
-#  - "Email?": users[0].email_notice
-#    datatype: yesnoradio
-#---
-#id: spouse notice by email
-#question: |
-#  Does your spouse have an email address?
-#subquestion: |
-#  If your spouse has an email address, you must list it so the court clerk can contact them about this case.
-#fields:
-#  - "Spouse email?": users[1].email_notice
-#    datatype: yesnoradio
-#---
-#id: email address
-#question: |
-#  What email address do you want to list on your court forms?
-#subquestion: |
-#  If you do not want to enter your personal email address, you can create a new email account to get email about your case.
-#  
-#  Be sure to check this email daily, otherwise you may miss important information about your case.
-#fields:
-#  - Email address: users[0].email    
-#    datatype: email
-#---
-#id: spouse email address
-#question: |
-#  What email address does your spouse want to list on the court forms?
-#subquestion: |
-#  If they do not want to enter their personal email address, they can create a new email account to get email about the case. 
-#  
-#  It is important to check this email daily or they may miss important information about the case.
-#fields:
-#  - Spouse's email address: users[1].email    
-#    datatype: email
 ---
 id: your contact information
 question: |
@@ -1688,8 +1764,8 @@ subquestion: |
     <h6 class="alert-heading">What it means to sign your forms</h6>
     <p>By signing your <i>Request for Name Change</i>, you are certifying that:</p>
     <p><ul>
-      <li>Everything on the forms is true and correct, and</li>
-      <li>You understand that making a false statement on the form is perjury, which can result in criminal penalties.</li>
+      <li>Everything on the forms is true and correct, or you have been informed or you believe it is true and correct, and</li>
+      <li>You understand that making a false statement on the forms is perjury and has penalties provided by law.</li>
     </ul></p>
     <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
   </div>
@@ -1699,17 +1775,6 @@ fields:
 terms:
   - "e-signature": |
       An e-signature is an electronic signature. It is a digital version of a signature that has the same effect as a hand-written signature. 
----
-#template: signature_help
-#subject: |
-#  **What does it mean to sign the forms?**
-#content: |  
-#  By signing your forms, the person signing is certifying that:
-#  
-#  * Everything on the form is true and correct, and
-#  * They understand that making a false statement on the form is perjury, which can result in criminal penalties.
-#  
-#  See the [**Code of Civil Procedure, 735 ILCS 5/1-109**](https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm), for more information.
 ---
 id: spouse e-signature
 question: |
@@ -1723,8 +1788,8 @@ subquestion: |
     <h6 class="alert-heading">What it means to sign the forms</h6>
     <p>By signing the <i>Request for Name Change</i>, your spouse is certifying that:</p>
     <p><ul>
-      <li>Everything on the forms is true and correct, and</li>
-      <li>They understand that making a false statement on the form is perjury, which can result in criminal penalties.</li>
+      <li>Everything on the forms is true and correct, or they have been informed or they believe it is true and correct, and</li>
+      <li>They understand that making a false statement on the forms is perjury and has penalties provided by law.</li>
     </ul></p>
     <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
   </div>
@@ -1801,7 +1866,7 @@ subquestion: |
   
   Your forms are ready. View and download your forms below. Click **Make changes** to fix any mistakes.
 
-  This program **does not** file your forms with the court. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
+  This program **does not file** your forms with the court. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
 
   ${ action_button_html(url_action('review_answers'), label=':edit: Make changes', color='success', size="md") }
   
@@ -1811,7 +1876,7 @@ subquestion: |
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=False) }
 
-  **Note:** This program **does not** file your forms with the court. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
+  **Note:** This program **does not file** your forms with the court. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
   
   Thank you for using ILAO Easy Forms!
 under: |
@@ -1840,6 +1905,11 @@ objects:
   - spouse_additional_criminal_history: ALDocument.using(title="Additional Criminal History", filename="name_change_additional_criminal_history.pdf", has_addendum=False)  
   - order: ALDocument.using(title="Order for name change", filename="order.pdf", has_addendum=False)
   - spouse_order: ALDocument.using(title="Spouse's Order for name change", filename="order_spouse.pdf", has_addendum=False)
+  - motion_to_impound: ALDocument.using(title="Motion to Impound", filename="motion_to_impound.pdf", has_addendum=False)
+  - order_to_impound: ALDocument.using(title="Order on Motion to Impound", filename="order_to_impound.pdf", has_addendum=False)
+
+  
+  # forms removed at March 2025 update  
   - motion_to_waive_notice: ALDocument.using(title="Motion to Waive Notice and Publication", filename="motion_to_waive_notice.pdf", has_addendum=False)
   - order_to_waive_notice: ALDocument.using(title="Order to Waive Notice and Publication", filename="order_to_waive_notice.pdf", has_addendum=False)
   - spouse_motion_to_waive_notice: ALDocument.using(title="Spouse's Motion to Waive Notice and Publication", filename="motion_to_waive_notice_spouse.pdf", has_addendum=False)
@@ -1856,13 +1926,16 @@ code: |
   spouse_additional_criminal_history.enabled = False
   order.enabled = True
   spouse_order.enabled = False
+  motion_to_impound.enabled = False
+  order_to_impound.enabled = False
+
   motion_to_waive_notice.enabled = False
   order_to_waive_notice.enabled = False
   spouse_motion_to_waive_notice.enabled = False
   spouse_order_to_waive_notice.enabled = False
   publication_notice.enabled = False
   publication_notice_spouse.enabled = False
-
+  
   if users[0].felonies or users[0].registry or users[0].id_theft:
     if users[0].convictions.number() > 3:
       additional_criminal_history.enabled = True
@@ -1872,23 +1945,29 @@ code: |
       if users[1].convictions.number() > 3:
         spouse_additional_criminal_history.enabled = True
 
-  if users[0].after_divorce == False:
-    if request_waiver == True:  
-      motion_to_waive_notice.enabled = True
-      order_to_waive_notice.enabled = True
-    else:
-      publication_notice.enabled = True
-    
-  if change_spouse_name == "Yes":
-    if spouse_request_waiver == True:  
-      spouse_motion_to_waive_notice.enabled = True
-      spouse_order_to_waive_notice.enabled = True
-    else:  
-      publication_notice_spouse.enabled = True
+  if request_impoundment:
+    motion_to_impound.enabled = True
+    order_to_impound.enabled = True
+
+#  if users[0].after_divorce == False:
+#    if request_waiver == True:  
+#      motion_to_waive_notice.enabled = True
+#      order_to_waive_notice.enabled = True
+#    else:
+#      publication_notice.enabled = True
+#    
+#  if change_spouse_name == "Yes":
+#    if spouse_request_waiver == True:  
+#      spouse_motion_to_waive_notice.enabled = True
+#      spouse_order_to_waive_notice.enabled = True
+#    else:  
+#      publication_notice_spouse.enabled = True
 ---
 objects:
-  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, publication_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, publication_notice_spouse, order, spouse_order], filename="name_change_request.pdf", title="All forms")
-  - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, order, spouse_order], filename="name_change_request.pdf", title="Name change request")
+  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_impound, order_to_impound, order, spouse_order], filename="name_change_request.pdf", title="All forms")
+  - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_impound, order_to_impound, order, spouse_order], filename="name_change_request.pdf", title="Name change request")
+#  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, publication_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, publication_notice_spouse, order, spouse_order], filename="name_change_request.pdf", title="All forms")
+#  - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, order, spouse_order], filename="name_change_request.pdf", title="Name change request")
 ---
 objects:
   - request_pdf_bundle: ALDocumentBundle.using(elements=[request, additional_criminal_history, spouse_additional_criminal_history], filename="request.pdf", title="Request for name change")
@@ -1911,7 +1990,7 @@ attachment:
   editable: False
   pdf template file: name_change_request.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user__1": ${ users[0].name.full(middle="full") }
     - "user_name_first": ${ users[0].name.first }
     - "user_name_middle": ${ users[0].name.middle }
@@ -1952,14 +2031,16 @@ attachment:
         % endif
         % endif
     - "user_divorce_date": ${ divorce_date if users[0].after_divorce else '' }
-    - "user_misdemeanor_yes": ${ True if users[0].misdemeanors == True else '' }
-    - "user_misdemeanor_no": ${ True if users[0].misdemeanors == False else '' }
+    - "user_misdemeanor_yes": ${ True if users[0].misdemeanors == True and users[0].misdemeanor_pardon == False else '' }
+    - "user_misdemeanor_no": ${ True if users[0].misdemeanors == False or (users[0].misdemeanors == True and users[0].misdemeanor_pardon == True) else '' }
+    - "user_misdemeanor_outside_il_yes": ${ True if users[0].misdemeanors_outside_il == True and users[0].misdemeanor_outside_il_pardon == False else '' }
+    - "user_misdemeanor_outside_il_no": ${ True if users[0].misdemeanors_outside_il == False or (users[0].misdemeanors_outside_il == True and users[0].misdemeanor_outside_il_pardon == True) else '' }
     - "user_pending_arrests_yes": ${ True if users[0].pending_arrests == True else '' }
     - "user_pending_arrests_no": ${ True if users[0].pending_arrests == False else '' }
     - "user_pending_charges_yes": ${ True if users[0].pending_charges == True else '' }
     - "user_pending_charges_no": ${ True if users[0].pending_charges == False else '' }
-    - "user_felony_yes": ${ True if users[0].felonies == True else '' }
-    - "user_felony_no": ${ True if users[0].felonies == False else '' }
+    - "user_felony_yes": ${ True if users[0].felonies == True and users[0].felony_pardon == False else '' }
+    - "user_felony_no": ${ True if users[0].felonies == False or (users[0].felonies == True and users[0].felony_pardon == True) else '' }
     - "user_registry_yes": ${ True if users[0].registry == True else '' }
     - "user_registry_no": ${ True if users[0].registry == False else '' }
     - "user_registry_exception_marriage": ${ True if users[0].registry == True and users[0].registry_exceptions['Marriage'] == True else '' }
@@ -2032,14 +2113,17 @@ attachment:
         ${ users[1].birthplace.city }, ${users[1].birthplace.country}        
         % endif
         % endif
-    - "spouse_misdemeanor_yes": ${ True if users[1].misdemeanors == True and change_spouse_name == "Yes" else '' }
-    - "spouse_misdemeanor_no": ${ True if users[1].misdemeanors == False and change_spouse_name == "Yes" else '' }
+    - "spouse_misdemeanor_yes": ${ True if users[1].misdemeanors == True and users[1].misdemeanor_pardon == False and change_spouse_name == "Yes" else '' }
+    - "spouse_misdemeanor_no": ${ True if (users[1].misdemeanors == False or (users[1].misdemeanors == True and users[1].misdemeanor_pardon == True) ) and change_spouse_name == "Yes" else '' }
+    - "spouse_misdemeanor_outside_il_yes": ${ True if users[1].misdemeanors_outside_il == True and users[1].misdemeanor_outside_il_pardon == False and change_spouse_name == "Yes" else '' }
+    - "spouse_misdemeanor_outside_il_no": ${ True if ( users[1].misdemeanors_outside_il == False or (users[1].misdemeanors_outside_il == True and users[1].misdemeanor_outside_il_pardon == True) ) and change_spouse_name == "Yes" else '' }
+  
     - "spouse_pending_arrests_yes": ${ True if users[1].pending_arrests == True and change_spouse_name == "Yes" else '' }
     - "spouse_pending_arrests_no": ${ True if users[1].pending_arrests == False and change_spouse_name == "Yes" else '' }
     - "spouse_pending_charges_yes": ${ True if users[1].pending_charges == True and change_spouse_name == "Yes" else '' }
     - "spouse_pending_charges_no": ${ True if users[1].pending_charges == False and change_spouse_name == "Yes" else '' }
-    - "spouse_felony_yes": ${ True if users[1].felonies == True and change_spouse_name == "Yes" else '' }
-    - "spouse_felony_no": ${ True if users[1].felonies == False and change_spouse_name == "Yes" else '' }
+    - "spouse_felony_yes": ${ True if users[1].felonies == True and users[1].felony_pardon == False and change_spouse_name == "Yes" else '' }
+    - "spouse_felony_no": ${ True if (users[1].felonies == False or (users[1].felonies == True and users[1].felony_pardon == True) ) and change_spouse_name == "Yes" else '' }
     - "spouse_registry_yes": ${ True if users[1].registry == True and change_spouse_name == "Yes" else '' }
     - "spouse_registry_no": ${ True if users[1].registry == False and change_spouse_name == "Yes" else '' }
     
@@ -2108,7 +2192,7 @@ attachment:
   editable: False
   pdf template file: name_change_additional_criminal_history.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user__1": ${ users[0].name.full(middle="full") }
     - "user_offense_name_4": ${ users[0].convictions[3].name.text }
     - "user_conviction_date_4": ${ format_date(users[0].convictions[3].date, format='MM/dd/yyyy') }
@@ -2227,7 +2311,7 @@ attachment:
   editable: False
   pdf template file: name_change_additional_criminal_history.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user__1": ${ users[1].name.full(middle="full") }
     - "user_offense_name_4": ${ users[1].convictions[3].name.text }
     - "user_conviction_date_4": ${ format_date(users[1].convictions[3].date, format='MM/dd/yyyy') }
@@ -2346,7 +2430,7 @@ attachment:
   editable: False
   pdf template file: motion_to_waive_notice.pdf
   fields:      
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user__1": ${ users[0].name.full(middle="full") }
     - "waiver_order_cb": ${ True if waiver_reason['order'] == True else '' }
     - "protective_order_op": ${ True if protective_order['op'] == True else '' }
@@ -2387,7 +2471,7 @@ attachment:
   editable: False
   pdf template file: motion_to_waive_notice.pdf
   fields:      
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user__1": ${ users[1].name.full(middle="full") }
     - "waiver_order_cb": ${ True if spouse_waiver_reason['order'] == True else '' }
     - "protective_order_op": ${ True if spouse_protective_order['op'] == True else '' }
@@ -2428,7 +2512,7 @@ attachment:
   editable: True
   pdf template file: publication_notice.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user__1": ${ users[0].name.full(middle="full") }
     - "user_name_first": ${ users[0].name.first }
     - "user_name_middle": ${ users[0].name.middle }
@@ -2467,7 +2551,7 @@ attachment:
   editable: True
   pdf template file: publication_notice.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user__1": ${ users[1].name.full(middle="full") }
     - "user_name_first": ${ users[1].name.first }
     - "user_name_middle": ${ users[1].name.middle }
@@ -2497,6 +2581,26 @@ attachment:
     - "user_email": ${ users[0].email if users[1].email_notice else '' }
 ---
 attachment:
+  variable name: motion_to_impound[i]
+  name: motion_to_impound
+  filename: motion_to_impound
+  skip undefined: True
+  editable: False
+  pdf template file: motion_to_impound.pdf
+  fields:      
+    - "trial_court_county": ${ case_county }
+    - "user__1": ${ users[0].name.full(middle="full") }
+    - "impoundment_reason_member": ${ impoundment_reasons['member'] }
+    - "impoundment_reason_other": ${ impoundment_reasons['other'] }
+    - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
+    - "user__2": ${ users[0].name.full(middle="full") }
+    - "user_address": ${ users[0].address.on_one_line(bare=True) }
+    - "user_hide_address_cb": ${ True if hide_address else '' }
+    - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
+    - "user_atty_number": ${ '' }
+    - "user_email": ${ users[0].email if users[0].email_notice else '' }
+---
+attachment:
   variable name: order[i]
   name: order
   filename: order
@@ -2504,7 +2608,7 @@ attachment:
   editable: False
   pdf template file: name_change_order.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user": ${ users[0].name.full(middle="full") }
 ---
 attachment:
@@ -2515,8 +2619,19 @@ attachment:
   editable: False
   pdf template file: name_change_order.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user": ${ users[1].name.full(middle="full") }
+---
+attachment:
+  variable name: order_to_impound[i]
+  name: order_to_impound
+  filename: order_to_impound
+  skip undefined: True
+  editable: False
+  pdf template file: order_to_impound.pdf
+  fields:
+    - "trial_court_county": ${ case_county }
+    - "user": ${ users[0].name.full(middle="full") }
 ---
 attachment:
   variable name: order_to_waive_notice[i]
@@ -2526,7 +2641,7 @@ attachment:
   editable: False
   pdf template file: order_to_waive_notice.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user": ${ users[0].name.full(middle="full") }
 ---
 attachment:
@@ -2537,7 +2652,7 @@ attachment:
   editable: False
   pdf template file: order_to_waive_notice.pdf
   fields:
-    - "trial_court_county": ${ trial_court.address.county }
+    - "trial_court_county": ${ case_county }
     - "user": ${ users[1].name.full(middle="full") }
 
 ---
@@ -2580,13 +2695,32 @@ review:
   - Edit: 
       - users[0].is_resident
     button: |
-      **Lived in Illinois for the past 6 months?**
+      **Lived in Illinois for the past three months?**
       ${ word(yesno(users[0].is_resident)) }
   - Edit: 
       - users[0].resident_date
     button: |
       **Lived in Illinois since:**
       ${ users[0].resident_date }
+  - Edit: 
+      - users[0].after_divorce
+    button: |
+      **Are you changing your name as a result of a divorce?**
+      ${ word(yesno(users[0].after_divorce)) }
+  - Edit: 
+      - divorce_date
+    button: |
+      **Divorce details**
+
+      Date of divorce judgment: ${ showifdef('divorce_date') }
+
+      % if divorce_in_us:
+      Divorce location: ${ showifdef('divorce_location.county') }, ${ showifdef('divorce_location.state') }
+      % else:
+      Divorce location: ${ showifdef('divorce_location.intl_text') }
+      % endif      
+    show if: users[0].after_divorce == True
+      
   - Edit: hide_address
     button: |
       **Do you want to keep your address hidden?**
@@ -2623,13 +2757,22 @@ review:
       ${ word(yesno(users[0].pending_charges)) }
   - Edit: users[0].misdemeanors
     button: |
-      **Do you have any convictions or were you placed on probation for any misdemeanors?**
+      **Do you have any convictions or were you placed on probation for any misdemeanors in Illinois?**
       ${ word(yesno(users[0].misdemeanors)) }
   - Edit: users[0].misdemeanors
     button: |
-      **Were all of these misdemeanors pardoned?**
+      **Were all of these Illinois misdemeanors pardoned?**
       ${ word(yesno(users[0].misdemeanor_pardon)) }
     show if: users[0].misdemeanors == True
+  - Edit: users[0].misdemeanors_outside_il
+    button: |
+      **Do you have any convictions or were you placed on probation for any misdemeanors outside Illinois?**
+      ${ word(yesno(users[0].misdemeanors_outside_il)) }
+  - Edit: users[0].misdemeanors_outside_il
+    button: |
+      **Were all of these misdemeanors outside Illinois pardoned?**
+      ${ word(yesno(users[0].misdemeanor_outside_il_pardon)) }
+    show if: users[0].misdemeanors_outside_il == True
   - Edit: users[0].felonies
     button: |
       **Do you have any convictions or were you placed on probation for any felonies?**
@@ -2717,7 +2860,7 @@ review:
   - Edit: 
       - users[1].is_resident
     button: |
-      **Has your spouse lived in Illinois for the past 6 months?**
+      **Has your spouse lived in Illinois for the past three months?**
       ${ word(yesno(users[1].is_resident)) }
     show if: change_spouse_name == 'Yes'
   - Edit: 
@@ -2768,14 +2911,24 @@ review:
     show if: change_spouse_name == 'Yes'
   - Edit: users[1].misdemeanors
     button: |
-      **Does your spouse have any convictions or were they placed on probation for any misdemeanors?**
+      **Does your spouse have any convictions or were they placed on probation for any misdemeanors in Illinois?**
       ${ word(yesno(users[1].misdemeanors)) }
     show if: change_spouse_name == 'Yes'
   - Edit: users[1].misdemeanors
     button: |
-      **Were all of these misdemeanors pardoned?**
+      **Were all of these Illinois misdemeanors pardoned?**
       ${ word(yesno(users[1].misdemeanor_pardon)) }
     show if: change_spouse_name == 'Yes' and users[1].misdemeanors == True
+  - Edit: users[1].misdemeanors_outside_il
+    button: |
+      **Does your spouse have any convictions or were they placed on probation for any misdemeanors outside Illinois?**
+      ${ word(yesno(users[1].misdemeanors_outside_il)) }
+    show if: change_spouse_name == 'Yes'
+  - Edit: users[1].misdemeanors_outside_il
+    button: |
+      **Were all of these misdemeanors outside Illinois pardoned?**
+      ${ word(yesno(users[1].misdemeanor_outside_il_pardon)) }
+    show if: change_spouse_name == 'Yes' and users[1].misdemeanors_outside_il == True
   - Edit: users[1].felonies
     button: |
       **Does your spouse have any convictions or were they placed on probation for any felonies?**
@@ -2822,24 +2975,6 @@ review:
       % endfor
     show if: change_spouse_name == 'Yes' and (users[1].felonies or users[1].registry or users[1].id_theft)
 
-  - Edit: 
-      - users[0].after_divorce
-    button: |
-      **Are you changing your name as a result of a divorce?**
-      ${ word(yesno(users[0].after_divorce)) }
-  - Edit: 
-      - divorce_date
-    button: |
-      **Divorce details**
-
-      Date of divorce judgment: ${ showifdef('divorce_date') }
-
-      % if divorce_in_us:
-      Divorce location: ${ showifdef('divorce_location.county') }, ${ showifdef('divorce_location.state') }
-      % else:
-      Divorce location: ${ showifdef('divorce_location.intl_text') }
-      % endif      
-    show if: users[0].after_divorce == True
   - Edit: request_waiver
     button: |
       **Do you want to request a waiver of newspaper publication for your name change?**
@@ -2945,31 +3080,50 @@ review:
       ${ spouse_hardship_text }
     show if: change_spouse_name == 'Yes' and spouse_request_waiver == True
 
-
-  - Edit: 
-      - trial_court_index
-      - recompute:
-        - trial_court
+  - Edit: case_county
     button: |
       **County where you are filing your name change request:**
-      ${ trial_court.address.county }
-  - Edit: cook_district
+      ${ case_county }
+      
+#  - Edit: 
+#      - trial_court_index
+#      - recompute:
+#        - trial_court
+#    button: |
+#      **County where you are filing your name change request:**
+#      ${ trial_court.address.county }
+#  - Edit: cook_district
+#    button: |
+#      **Cook County courthouse:**
+#      % if cook_district == "15":
+#      ${ "Daley Center, 50 W. Washington Street, Chicago" }
+#      % elif cook_district == "16":
+#      ${ "Second Municipal District, 5600 Old Orchard Road, Skokie" }
+#      % elif cook_district == "17":
+#      ${ "Third Municipal District, 2121 Euclid Avenue, Rolling Meadows" }
+#      % elif cook_district == "18":
+#      ${ "Fourth Municipal District, 1500 Maybrook Drive, Maywood" }
+#      % elif cook_district == "19":
+#      ${ "Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview" }
+#      % elif cook_district == "20":
+#      ${ "Sixth Municipal District, 16501 South Kedzie Parkway, Markham" }
+#      % endif      
+#    show if: trial_court_index == -1
+  - Edit: request_impoundment
     button: |
-      **Cook County courthouse:**
-      % if cook_district == "15":
-      ${ "Daley Center, 50 W. Washington Street, Chicago" }
-      % elif cook_district == "16":
-      ${ "Second Municipal District, 5600 Old Orchard Road, Skokie" }
-      % elif cook_district == "17":
-      ${ "Third Municipal District, 2121 Euclid Avenue, Rolling Meadows" }
-      % elif cook_district == "18":
-      ${ "Fourth Municipal District, 1500 Maybrook Drive, Maywood" }
-      % elif cook_district == "19":
-      ${ "Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview" }
-      % elif cook_district == "20":
-      ${ "Sixth Municipal District, 16501 South Kedzie Parkway, Markham" }
-      % endif      
-    show if: trial_court_index == -1      
+      **Do you want to keep your name change court file private?**
+      ${ word(yesno(request_impoundment)) }
+  - Edit: impoundment_reasons
+    button: |
+      **Having your court file public would be a hardship because:**
+
+      % if impoundment_reasons['member']:
+      *  I am at higher risk of hardship based on my identity, experience, or status.
+      % endif
+      % if impoundment_reasons['other']:
+      * I have other reasons including fear of physical harm or discrimination.
+      % endif
+    show if: request_impoundment
   - Edit: e_signature
     button: |
       **Do you want to add your e-signature to your forms?**
@@ -3125,6 +3279,25 @@ review:
     button: |
       **Lived in Illinois since:**
       ${ users[0].resident_date }
+  - Edit: 
+      - users[0].after_divorce
+    button: |
+      **Are you changing your name as a result of a divorce?**
+      ${ word(yesno(users[0].after_divorce)) }
+  - Edit: 
+      - divorce_date
+    button: |
+      **Divorce details**
+
+      Date of divorce judgment: ${ showifdef('divorce_date') }
+
+      % if divorce_in_us:
+      Divorce location: ${ showifdef('divorce_location.county') }, ${ showifdef('divorce_location.state') }
+      % else:
+      Divorce location: ${ showifdef('divorce_location.intl_text') }
+      % endif      
+    show if: users[0].after_divorce == True
+      
   - Edit: hide_address
     button: |
       **Do you want to keep your address hidden?**
@@ -3166,13 +3339,22 @@ review:
       ${ word(yesno(users[0].pending_charges)) }
   - Edit: users[0].misdemeanors
     button: |
-      **Do you have any convictions or were you placed on probation for any misdemeanors?**
+      **Do you have any convictions or were you placed on probation for any misdemeanors in Illinois?**
       ${ word(yesno(users[0].misdemeanors)) }
   - Edit: users[0].misdemeanors
     button: |
-      **Were all of these misdemeanors pardoned?**
+      **Were all of these Illinois misdemeanors pardoned?**
       ${ word(yesno(users[0].misdemeanor_pardon)) }
     show if: users[0].misdemeanors == True
+  - Edit: users[0].misdemeanors_outside_il
+    button: |
+      **Do you have any convictions or were you placed on probation for any misdemeanors outside Illinois?**
+      ${ word(yesno(users[0].misdemeanors_outside_il)) }
+  - Edit: users[0].misdemeanors_outside_il
+    button: |
+      **Were all of these misdemeanors outside Illinois pardoned?**
+      ${ word(yesno(users[0].misdemeanor_outside_il_pardon)) }
+    show if: users[0].misdemeanors_outside_il == True
   - Edit: users[0].felonies
     button: |
       **Do you have any convictions or were you placed on probation for any felonies?**
@@ -3327,14 +3509,24 @@ review:
     show if: change_spouse_name == 'Yes'
   - Edit: users[1].misdemeanors
     button: |
-      **Does your spouse have any convictions or were they placed on probation for any misdemeanors?**
+      **Does your spouse have any convictions or were they placed on probation for any misdemeanors in Illinois?**
       ${ word(yesno(users[1].misdemeanors)) }
     show if: change_spouse_name == 'Yes'
   - Edit: users[1].misdemeanors
     button: |
-      **Were all of these misdemeanors pardoned?**
+      **Were all of these Illinois misdemeanors pardoned?**
       ${ word(yesno(users[1].misdemeanor_pardon)) }
     show if: change_spouse_name == 'Yes' and users[1].misdemeanors == True
+  - Edit: users[1].misdemeanors_outside_il
+    button: |
+      **Does your spouse have any convictions or were they placed on probation for any misdemeanors outside Illinois?**
+      ${ word(yesno(users[1].misdemeanors_outside_il)) }
+    show if: change_spouse_name == 'Yes'
+  - Edit: users[1].misdemeanors_outside_il
+    button: |
+      **Were all of these misdemeanors outside Illinois pardoned?**
+      ${ word(yesno(users[1].misdemeanor_outside_il_pardon)) }
+    show if: change_spouse_name == 'Yes' and users[1].misdemeanors_outside_il == True
   - Edit: users[1].felonies
     button: |
       **Does your spouse have any convictions or were they placed on probation for any felonies?**
@@ -3520,30 +3712,50 @@ question: |
 subquestion: |
   Edit your answers below.
 review:
-  - Edit: 
-      - trial_court_index
-      - recompute:
-        - trial_court
+  - Edit: case_county
     button: |
       **County where you are filing your name change request:**
-      ${ trial_court.address.county }
-  - Edit: cook_district
+      ${ case_county }
+      
+#  - Edit: 
+#      - trial_court_index
+#      - recompute:
+#        - trial_court
+#    button: |
+#      **County where you are filing your name change request:**
+#      ${ trial_court.address.county }
+#  - Edit: cook_district
+#    button: |
+#      **Cook County courthouse:**
+#      % if cook_district == "15":
+#      ${ "Daley Center, 50 W. Washington Street, Chicago" }
+#      % elif cook_district == "16":
+#      ${ "Second Municipal District, 5600 Old Orchard Road, Skokie" }
+#      % elif cook_district == "17":
+#      ${ "Third Municipal District, 2121 Euclid Avenue, Rolling Meadows" }
+#      % elif cook_district == "18":
+#      ${ "Fourth Municipal District, 1500 Maybrook Drive, Maywood" }
+#      % elif cook_district == "19":
+#      ${ "Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview" }
+#      % elif cook_district == "20":
+#      ${ "Sixth Municipal District, 16501 South Kedzie Parkway, Markham" }
+#      % endif      
+#    show if: trial_court_index == -1
+  - Edit: request_impoundment
     button: |
-      **Cook County courthouse:**
-      % if cook_district == "15":
-      ${ "Daley Center, 50 W. Washington Street, Chicago" }
-      % elif cook_district == "16":
-      ${ "Second Municipal District, 5600 Old Orchard Road, Skokie" }
-      % elif cook_district == "17":
-      ${ "Third Municipal District, 2121 Euclid Avenue, Rolling Meadows" }
-      % elif cook_district == "18":
-      ${ "Fourth Municipal District, 1500 Maybrook Drive, Maywood" }
-      % elif cook_district == "19":
-      ${ "Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview" }
-      % elif cook_district == "20":
-      ${ "Sixth Municipal District, 16501 South Kedzie Parkway, Markham" }
-      % endif      
-    show if: trial_court_index == -1      
+      **Do you want to keep your name change court file private?**
+      ${ word(yesno(request_impoundment)) }
+  - Edit: impoundment_reasons
+    button: |
+      **Having your court file public would be a hardship because:**
+
+      % if impoundment_reasons['member']:
+      *  I am at higher risk of hardship based on my identity, experience, or status.
+      % endif
+      % if impoundment_reasons['other']:
+      * I have other reasons including fear of physical harm or discrimination.
+      % endif
+    show if: request_impoundment
   - Edit: e_signature
     button: |
       **Do you want to add your e-signature to your forms?**
