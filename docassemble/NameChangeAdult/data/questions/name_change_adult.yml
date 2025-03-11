@@ -195,7 +195,7 @@ code: |
 
   stuff_to_snapshot['downloaded_forms'] = showifdef('forms_assembling')
 
-  stuff_to_snapshot['downloaded_forms'] = showifdef('request_impoundment')
+  stuff_to_snapshot['request_impoundment'] = showifdef('request_impoundment')
   
   store_variables_snapshot(
   	data=stuff_to_snapshot, persistent=True
