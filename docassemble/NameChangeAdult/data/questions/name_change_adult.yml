@@ -608,6 +608,8 @@ subquestion: |
   % endif
   
   Having any criminal history does not prevent a person from getting a legal name change. Only certain offenses can affect the name change request. The next screens will guide you through the process.
+
+  **Note:** For these questions about criminal history, include both adult and juvenile offenses.
 ---
 id: pending arrests
 generic object: ALPeopleList
