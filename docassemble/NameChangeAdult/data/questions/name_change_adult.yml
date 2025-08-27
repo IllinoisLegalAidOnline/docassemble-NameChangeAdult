@@ -120,41 +120,8 @@ code: |
         spouse_not_resident_kickout
         spouse_resident_check
          
-  
-  #  set_progress(75)
-  #  nav.set_section('section_notice')
-  #  notice_intro
-  #  if users[0].after_divorce == False:
-  #    if request_waiver == True:
-  #      if waiver_reason['order'] == True:
-  #        if protective_order.any_true():
-  #          orders.gather()
-  #      hardship_text
-  #
-  #  if change_spouse_name == "Yes":
-  #    if spouse_request_waiver == True:
-  #      if spouse_waiver_reason['order'] == True:
-  #        if spouse_protective_order.any_true():
-  #          spouse_orders.gather()
-  #      spouse_hardship_text
-  #
-  #  if users[0].after_divorce == False:
-  #    if request_waiver == False:
-  #      publication_intro
-  #      complete_publication_notice
-  #
-  #  if change_spouse_name == "Yes":
-  #    if spouse_request_waiver == False:
-  #      publication_intro
-  #      complete_publication_notice
-
   set_progress(90)
   nav.set_section('section_filing_details')
-  #  if trial_court_index == -1:
-  #    cook_district
-  #    if cook_district == "15":
-  #      district_1
-  #  courthouse_info
 
   if case_county == "Cook":
     cook_filing_info
@@ -218,7 +185,7 @@ subquestion: |
 
   This program helps you make the forms to request a legal name change in Illinois. If you have a spouse, they can request a name change at the same time on your forms.
   
-  To learn more, read ILAO's article about [**Name change basics**](https://www.illinoislegalaid.org/node/29921).
+  To learn more, read ILAO's article about [**adult name changes**](https://www.illinoislegalaid.org/node/29921).
 field: sees_nav_bar
 ---
 id: instructions
@@ -235,7 +202,7 @@ subquestion: |
 
   If you are under 18 and want to change your name, you will need a parent or guardian to file for you. They can use ILAO's [**Name change for a child**](https://www.illinoislegalaid.org/legal-information/name-change-child) Easy Form.
   
-  Set aside 10 to 15 minutes to finish this program. You can log in and save your work to return to later. 
+  Set aside 10 to 15 minutes to finish this program. You can log in and save your work to continue later. 
  
   ${ collapse_template(help_example) }  
 
@@ -294,8 +261,7 @@ fields:
   - Country (outside US): users[0].birthplace.country
     show if: 
       variable: users[0].in_america
-      is: False    
-    
+      is: False
 ---
 id: spouse birthdate
 question: |
@@ -333,8 +299,7 @@ fields:
   - Country (outside US): users[1].birthplace.country
     show if: 
       variable: users[1].in_america
-      is: False    
-    
+      is: False
 ---
 id: user continuous illinois residence
 question: |
@@ -371,7 +336,6 @@ fields:
     datatype: BirthDate
     alMin: ${ users[1].birthdate.format("yyyy-MM-dd") }
     alMax: ${ today().format("yyyy-MM-dd") }
-
 ---
 id: date debug
 continue button field: date_debug
@@ -383,8 +347,6 @@ subquestion: |
   Residency date: ${format_date( users[0].resident_date )}
   
   Resident at least 3 months: ${ date_difference(starting=users[0].resident_date , ending=today() ).years > 0.25 }
-
-
 ---
 id: not illinois resident
 event: not_resident
@@ -418,7 +380,6 @@ code: |
   if change_spouse_name == "Yes" and (users[1].is_resident == False or date_difference(starting=users[1].resident_date , ending=today() ).years < 0.5):
     change_spouse_name = "No"
   spouse_resident_check = True
-  
 ---
 id: not adult
 event: not_adult
@@ -581,7 +542,6 @@ fields:
       - Yes: Yes
       - No: No
       - I do not have a spouse.: Does not apply
-
 ---
 id: criminal history intro
 generic object: ALPeopleList
@@ -621,14 +581,13 @@ question: |
     Does your spouse have any arrests for which charges have not been filed?
     % endif
   % else:
-  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any arrests for which charges have not been filed?
+  Does ${x[i].new.name_full()} (AKA ${x[i].name_full()}) have any arrests for which charges have not been filed?
   % endif
 subquestion: |
   If you were arrested but did not go to court or see a judge, then you were probably not charged with a crime. That means charges are pending.
 fields:
   - no label: x[i].pending_arrests
     datatype: yesnoradio
-
 ---
 id: pending charges
 generic object: ALPeopleList
@@ -640,7 +599,7 @@ question: |
     Does your spouse have any pending misdemeanor or felony charges?
     % endif
   % else:
-  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any pending misdemeanor or felony charges?
+  Does ${x[i].new.name_full()} (AKA ${x[i].name_full()}) have any pending misdemeanor or felony charges?
   % endif
 subquestion: |
   % if interview_type == 'adult':
@@ -650,7 +609,7 @@ subquestion: |
     In other words, does your spouse have any ongoing criminal cases against them for misdemeanor or felony offenses?
     % endif
   % else:
-    In other words, does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any ongoing criminal cases against them for misdemeanor or felony offenses?
+    In other words, does ${x[i].new.name_full()} (AKA ${x[i].name_full()}) have any ongoing criminal cases against them for misdemeanor or felony offenses?
   % endif
 fields:
   - no label: x[i].pending_charges
@@ -666,7 +625,7 @@ question: |
     Does your spouse have any convictions or were they placed on probation for any misdemeanors in Illinois?
     % endif
   % else:
-  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for any misdemeanors?
+  Does ${x[i].new.name_full()} (AKA ${x[i].name_full()}) have any convictions or were they placed on probation for any misdemeanors?
   % endif
 subquestion: |
   We will ask about misdemeanors in other states on another screen.
@@ -689,7 +648,7 @@ question: |
     Does your spouse have any convictions or were they placed on probation for any misdemeanors outside Illinois?
     % endif
   % else:
-  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for any misdemeanors?
+  Does ${x[i].new.name_full()} (AKA ${x[i].name_full()}) have any convictions or were they placed on probation for any misdemeanors?
   % endif
 subquestion: |
   **Note:** These do not include misdemeanors in Illinois.
@@ -712,7 +671,7 @@ question: |
     Does your spouse have any convictions or were they placed on probation for any felonies?
     % endif
   % else:
-  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for any felonies?
+  Does ${x[i].new.name_full()} (AKA ${x[i].name_full()}) have any convictions or were they placed on probation for any felonies?
   % endif
 subquestion: |
   These can be felonies in Illinois or any other state.
@@ -735,7 +694,7 @@ question: |
     Does your spouse have any convictions or were they placed on probation for a crime that required them to register?
     % endif
   % else:
-  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for a crime that required them register?
+  Does ${x[i].new.name_full()} (AKA ${x[i].name_full()}) have any convictions or were they placed on probation for a crime that required them register?
   % endif
 subquestion: |
   These include crimes that require registration under the:
@@ -848,7 +807,7 @@ question: |
     Does your spouse have any convictions or were they placed on probation for identity theft?
     % endif
   % else:
-  Does ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) have any convictions or were they placed on probation for identity theft?
+  Does ${x[i].new.name_full()} (AKA ${x[i].name_full()}) have any convictions or were they placed on probation for identity theft?
   % endif
 subquestion: |
   This includes **identity theft** or **aggravated identity theft**.
@@ -862,7 +821,7 @@ subquestion: |
     Your spouse can still request a name change even if you answer **Yes**.
     % endif
   % else:
-  You can still request a name change for ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}) even if you answer **Yes**.
+  You can still request a name change for ${x[i].new.name_full()} (AKA ${x[i].name_full()}) even if you answer **Yes**.
   % endif
 fields:
   - no label: x[i].id_theft
@@ -881,7 +840,7 @@ subquestion: |
     For these convictions or probations, you must enter more information on your spouse's name change request:
     % endif
   % else:
-  For these convictions or probations of ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}), you must enter more information:
+  For these convictions or probations of ${x[i].new.name_full()} (AKA ${x[i].name_full()}), you must enter more information:
   % endif
 
   % if x[i].felonies:
@@ -911,7 +870,7 @@ subquestion: |
     For any of the following convictions or probations, you must enter more information on your spouse's name change request:
     % endif
   % else:
-  For any of the following convictions or probations of ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}), you must enter more information:
+  For any of the following convictions or probations of ${x[i].new.name_full()} (AKA ${x[i].name_full()}), you must enter more information:
   % endif
   
   % if x[i].felonies:
@@ -943,7 +902,6 @@ fields:
 validation code: |
   if x[i].convictions[j].completed_date < x[i].convictions[j].date:
     validation_error("Date sentence completed must be on or after date of conviction or probation. Please adjust your answers.", field="x[i].convictions[j].completed_date")
-
 ---
 id: any other convictions
 generic object: ALPeopleList
@@ -957,7 +915,7 @@ subquestion: |
     For any of the following convictions or probations, you must enter more information on your spouse's name change request:
     % endif
   % else:
-  For these convictions or probations of ${x[i].new.name.full(middle='full')} (AKA ${x[i].name.full(middle='full')}), you must enter more information on your name change request:
+  For these convictions or probations of ${x[i].new.name_full()} (AKA ${x[i].name_full()}), you must enter more information on your name change request:
   % endif
 
   % if x[i].felonies:
@@ -1004,7 +962,6 @@ subquestion: |
   
    * The person requesting a name change is worried about their health or safety, or
    * The person requesting a name change was recently divorced and has not yet changed their name.
- 
 ---
 id: request waiver
 question: |
@@ -1048,7 +1005,6 @@ fields:
     choices:
       - Yes, my spouse wants to ask the court to waive publication.: True
       - No, my spouse is okay with newspaper publication.: False
-
 ---
 id: publication waiver reasons
 question: |
@@ -1227,16 +1183,16 @@ subject: |
   **What should my answer look like?**
 content: |  
   % if children.number_gathered() == 1:
-  This explanation will go on your *Motion to Waive Notice and Publication*. You should explain why giving or publishing notice would put ${children[0].new.name.full(middle='full')} (AKA ${children[0].name.full(middle='full')}) at risk of physical harm or discrimination.
+  This explanation will go on your *Motion to Waive Notice and Publication*. You should explain why giving or publishing notice would put ${children[0].new.name_full()} (AKA ${children[0].name_full()}) at risk of physical harm or discrimination.
   % else:
   This explanation will go on your *Motion to Waive Notice and Publication*. You should explain why giving or publishing notice would put your children at risk of physical harm or discrimination.
   % endif
 
   Here are some examples: 
   
-  "I need to change ${children[0].name.full(middle='full')}'s name to ${children[0].new.name.full(middle='full')} because we are trying to get away from my ex-boyfriend. He has abused ${children[0].name.full(middle='full')} in the past. I am afraid he will hurt ${children[0].name.full(middle='full')} if he learns about this name change request."
+  "I need to change ${children[0].name_full()}'s name to ${children[0].new.name_full()} because we are trying to get away from my ex-boyfriend. He has abused ${children[0].name_full()} in the past. I am afraid he will hurt ${children[0].name_full()} if he learns about this name change request."
   
-  "${children[0].name.full(middle='full')} wants to change their name to ${children[0].new.name.full(middle='full')} as part of a gender transition. I am afraid publishing notice of this change in the newspaper could lead to my child and I experiencing discrimination or targeted harassment."
+  "${children[0].name_full()} wants to change their name to ${children[0].new.name_full()} as part of a gender transition. I am afraid publishing notice of this change in the newspaper could lead to my child and I experiencing discrimination or targeted harassment."
 ---
 template: adult_notice_waiver_example
 subject: |
@@ -1333,8 +1289,6 @@ code: |
 code: |
   if orders.number_gathered() >= 4:
     orders.there_is_another = False
-
-
 ---
 id: spouse protective order details
 question: |
@@ -1756,7 +1710,7 @@ id: e-signature
 question: |
   Do you want to add your e-signature to your name change forms?
 subquestion: |
-  This program can put “**/s/ ${users[0].name.full(middle='full')}**” where you would sign your name. The court will accept this as your signature.
+  This program can put “**/s/ ${users[0].name_full()}**” where you would sign your name. The court will accept this as your signature.
 
   If you do not add your **{e-signature}**, you must sign your paper forms before you file them.
 
@@ -1780,7 +1734,7 @@ id: spouse e-signature
 question: |
   Does your spouse want to add their e-signature to their name change forms?
 subquestion: |
-  This program can put “**/s/ ${users[1].name.full(middle='full')}**” where they would sign their name. The court will accept this as their signature.
+  This program can put “**/s/ ${users[1].name_full()}**” where they would sign their name. The court will accept this as their signature.
 
   If they do not add their **{e-signature}** now, they must sign the paper forms before you file them.
   
@@ -1864,7 +1818,7 @@ question: |
   Download
 subquestion: |
   
-  Your forms are ready. View and download your forms below. Click **Make changes** to fix any mistakes.
+  Your forms are ready. View and download your forms below. Click **:edit: Make changes** to fix any mistakes.
 
   This program **does not file** your forms with the court. You will need to do this yourself. Learn about [**e-filing in Illinois**](https://www.illinoiscourts.gov/eservices/information-for-filers-without-lawyers).
 
@@ -1949,25 +1903,11 @@ code: |
     motion_to_impound.enabled = True
     order_to_impound.enabled = True
 
-#  if users[0].after_divorce == False:
-#    if request_waiver == True:  
-#      motion_to_waive_notice.enabled = True
-#      order_to_waive_notice.enabled = True
-#    else:
-#      publication_notice.enabled = True
-#    
-#  if change_spouse_name == "Yes":
-#    if spouse_request_waiver == True:  
-#      spouse_motion_to_waive_notice.enabled = True
-#      spouse_order_to_waive_notice.enabled = True
-#    else:  
-#      publication_notice_spouse.enabled = True
 ---
 objects:
   - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_impound, order_to_impound, order, spouse_order], filename="name_change_request.pdf", title="All forms")
   - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_impound, order_to_impound, order, spouse_order], filename="name_change_request.pdf", title="Name change request")
-#  - al_user_bundle: ALDocumentBundle.using(elements=[instructions, request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, publication_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, publication_notice_spouse, order, spouse_order], filename="name_change_request.pdf", title="All forms")
-#  - al_court_bundle: ALDocumentBundle.using(elements=[request_pdf_bundle, motion_to_waive_notice, order_to_waive_notice, spouse_motion_to_waive_notice, spouse_order_to_waive_notice, order, spouse_order], filename="name_change_request.pdf", title="Name change request")
+
 ---
 objects:
   - request_pdf_bundle: ALDocumentBundle.using(elements=[request, additional_criminal_history, spouse_additional_criminal_history], filename="request.pdf", title="Request for name change")
@@ -1991,7 +1931,7 @@ attachment:
   pdf template file: name_change_request.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user__1": ${ users[0].name.full(middle="full") }
+    - "user__1": ${ users[0].name_full() }
     - "user_name_first": ${ users[0].name.first }
     - "user_name_middle": ${ users[0].name.middle }
     - "user_name_last": |
@@ -2169,15 +2109,15 @@ attachment:
         No
         % endif
         % endif
-    - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
-    - "user__2": ${ users[0].name.full(middle="full") }
+    - "user_signature": ${ users[0].name_full() if e_signature else '' }
+    - "user__2": ${ users[0].name_full() }
     - "user_address": ${ users[0].address.on_one_line(bare=True) }
     - "user_hide_address_cb": ${ True if hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
     - "user_atty_number": ${ '' }
     - "user_email": ${ users[0].email if users[0].email_notice else '' }
-    - "spouse_signature": ${ users[1].name.full(middle="full") if e_signature_spouse and change_spouse_name == "Yes" else '' }
-    - "spouse_name": ${ users[1].name.full(middle="full") if change_spouse_name == "Yes" else '' }
+    - "spouse_signature": ${ users[1].name_full() if e_signature_spouse and change_spouse_name == "Yes" else '' }
+    - "spouse_name": ${ users[1].name_full() if change_spouse_name == "Yes" else '' }
     - "spouse_address": ${ users[1].address.on_one_line(bare=True) if change_spouse_name == "Yes" else '' }
     - "spouse_hide_address_cb": ${ True if spouse_hide_address else '' }
     - "spouse_phone": ${ phone_number_formatted(users[1].phone_number) if change_spouse_name == "Yes" else '' }
@@ -2193,7 +2133,7 @@ attachment:
   pdf template file: name_change_additional_criminal_history.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user__1": ${ users[0].name.full(middle="full") }
+    - "user__1": ${ users[0].name_full() }
     - "user_offense_name_4": ${ users[0].convictions[3].name.text }
     - "user_conviction_date_4": ${ format_date(users[0].convictions[3].date, format='MM/dd/yyyy') }
     - "user_sentence_4": ${ users[0].convictions[3].sentence }
@@ -2312,7 +2252,7 @@ attachment:
   pdf template file: name_change_additional_criminal_history.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user__1": ${ users[1].name.full(middle="full") }
+    - "user__1": ${ users[1].name_full() }
     - "user_offense_name_4": ${ users[1].convictions[3].name.text }
     - "user_conviction_date_4": ${ format_date(users[1].convictions[3].date, format='MM/dd/yyyy') }
     - "user_sentence_4": ${ users[1].convictions[3].sentence }
@@ -2431,7 +2371,7 @@ attachment:
   pdf template file: motion_to_waive_notice.pdf
   fields:      
     - "trial_court_county": ${ case_county }
-    - "user__1": ${ users[0].name.full(middle="full") }
+    - "user__1": ${ users[0].name_full() }
     - "waiver_order_cb": ${ True if waiver_reason['order'] == True else '' }
     - "protective_order_op": ${ True if protective_order['op'] == True else '' }
     - "protective_order_snco": ${ True if protective_order['snco'] == True else '' }
@@ -2455,8 +2395,8 @@ attachment:
     - "order_county_4": ${ orders[3].name.text if waiver_reason['order'] == True else '' }
     - "order_state_4": ${ orders[3].state if waiver_reason['order'] == True else '' }
     - "order_case_number_4": ${ orders[3].number if waiver_reason['order'] == True else '' }
-    - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
-    - "user__2": ${ users[0].name.full(middle="full") }
+    - "user_signature": ${ users[0].name_full() if e_signature else '' }
+    - "user__2": ${ users[0].name_full() }
     - "user_address": ${ users[0].address.on_one_line(bare=True) }
     - "user_hide_address_cb": ${ True if hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
@@ -2472,7 +2412,7 @@ attachment:
   pdf template file: motion_to_waive_notice.pdf
   fields:      
     - "trial_court_county": ${ case_county }
-    - "user__1": ${ users[1].name.full(middle="full") }
+    - "user__1": ${ users[1].name_full() }
     - "waiver_order_cb": ${ True if spouse_waiver_reason['order'] == True else '' }
     - "protective_order_op": ${ True if spouse_protective_order['op'] == True else '' }
     - "protective_order_snco": ${ True if spouse_protective_order['snco'] == True else '' }
@@ -2496,8 +2436,8 @@ attachment:
     - "order_county_4": ${ spouse_orders[3].name.text if spouse_waiver_reason['order'] == True else '' }
     - "order_state_4": ${ spouse_orders[3].state if spouse_waiver_reason['order'] == True else '' }
     - "order_case_number_4": ${ spouse_orders[3].number if spouse_waiver_reason['order'] == True else '' }
-    - "user_signature": ${ users[1].name.full(middle="full") if e_signature else '' }
-    - "user__2": ${ users[1].name.full(middle="full") }
+    - "user_signature": ${ users[1].name_full() if e_signature else '' }
+    - "user__2": ${ users[1].name_full() }
     - "user_address": ${ users[1].address.on_one_line(bare=True) }
     - "user_hide_address_cb": ${ True if spouse_hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[1].phone_number) }
@@ -2513,7 +2453,7 @@ attachment:
   pdf template file: publication_notice.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user__1": ${ users[0].name.full(middle="full") }
+    - "user__1": ${ users[0].name_full() }
     - "user_name_first": ${ users[0].name.first }
     - "user_name_middle": ${ users[0].name.middle }
     - "user_name_last": |
@@ -2535,8 +2475,8 @@ attachment:
     #- "courthouse_address": ${ courthouse_info }
     #- "clerk_phone": ${ trial_court.phone }
     #- "clerk_website": ${ trial_court.website }
-    - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
-    - "user__2": ${ users[0].name.full(middle="full") }
+    - "user_signature": ${ users[0].name_full() if e_signature else '' }
+    - "user__2": ${ users[0].name_full() }
     - "user_address": ${ users[0].address.on_one_line(bare=True) }
     - "user_hide_address_cb": ${ True if hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
@@ -2552,7 +2492,7 @@ attachment:
   pdf template file: publication_notice.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user__1": ${ users[1].name.full(middle="full") }
+    - "user__1": ${ users[1].name_full() }
     - "user_name_first": ${ users[1].name.first }
     - "user_name_middle": ${ users[1].name.middle }
     - "user_name_last": |
@@ -2572,8 +2512,8 @@ attachment:
     #- "courthouse_address": ${ courthouse_info }
     #- "clerk_phone": ${ trial_court.phone }
     #- "clerk_website": ${ trial_court.website }
-    - "user_signature": ${ users[1].name.full(middle="full") if e_signature else '' }
-    - "user__2": ${ users[1].name.full(middle="full") }
+    - "user_signature": ${ users[1].name_full() if e_signature else '' }
+    - "user__2": ${ users[1].name_full() }
     - "user_address": ${ users[1].address.on_one_line(bare=True) }
     - "user_hide_address_cb": ${ True if spouse_hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[1].phone_number) }
@@ -2589,11 +2529,11 @@ attachment:
   pdf template file: motion_to_impound.pdf
   fields:      
     - "trial_court_county": ${ case_county }
-    - "user__1": ${ users[0].name.full(middle="full") }
+    - "user__1": ${ users[0].name_full() }
     - "impoundment_reason_member": ${ impoundment_reasons['member'] }
     - "impoundment_reason_other": ${ impoundment_reasons['other'] }
-    - "user_signature": ${ users[0].name.full(middle="full") if e_signature else '' }
-    - "user__2": ${ users[0].name.full(middle="full") }
+    - "user_signature": ${ users[0].name_full() if e_signature else '' }
+    - "user__2": ${ users[0].name_full() }
     - "user_address": ${ users[0].address.on_one_line(bare=True) }
     - "user_hide_address_cb": ${ True if hide_address else '' }
     - "user_phone": ${ phone_number_formatted(users[0].phone_number) }
@@ -2609,7 +2549,7 @@ attachment:
   pdf template file: name_change_order.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user": ${ users[0].name.full(middle="full") }
+    - "user": ${ users[0].name_full() }
 ---
 attachment:
   variable name: spouse_order[i]
@@ -2620,7 +2560,7 @@ attachment:
   pdf template file: name_change_order.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user": ${ users[1].name.full(middle="full") }
+    - "user": ${ users[1].name_full() }
 ---
 attachment:
   variable name: order_to_impound[i]
@@ -2631,7 +2571,7 @@ attachment:
   pdf template file: order_to_impound.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user": ${ users[0].name.full(middle="full") }
+    - "user": ${ users[0].name_full() }
 ---
 attachment:
   variable name: order_to_waive_notice[i]
@@ -2642,7 +2582,7 @@ attachment:
   pdf template file: order_to_waive_notice.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user": ${ users[0].name.full(middle="full") }
+    - "user": ${ users[0].name_full() }
 ---
 attachment:
   variable name: spouse_order_to_waive_notice[i]
@@ -2653,7 +2593,7 @@ attachment:
   pdf template file: order_to_waive_notice.pdf
   fields:
     - "trial_court_county": ${ case_county }
-    - "user": ${ users[1].name.full(middle="full") }
+    - "user": ${ users[1].name_full() }
 
 ---
 ############### Review page
@@ -2668,12 +2608,12 @@ review:
       - users[0].name.first
     button: |
       **Current legal name:**
-      ${ users[0].name.full(middle="full") }
+      ${ users[0].name_full() }
   - Edit: 
       - users[0].new.name.first
     button: |
       **New name:**
-      ${ users[0].new.name.full(middle="full") }
+      ${ users[0].new.name_full() }
   - Edit:
     - users[0].birthdate
     button: |
@@ -2829,13 +2769,13 @@ review:
       - users[1].name.first
     button: |
       **Spouse's current legal name:**
-      ${ users[1].name.full(middle="full") }
+      ${ users[1].name_full() }
     show if: change_spouse_name == 'Yes'
   - Edit: 
       - users[1].new.name.first
     button: |
       **Spouse's new name:**
-      ${ users[1].new.name.full(middle="full") }
+      ${ users[1].new.name_full() }
     show if: change_spouse_name == 'Yes'
   - Edit:
     - users[1].birthdate
@@ -3084,31 +3024,7 @@ review:
     button: |
       **County where you are filing your name change request:**
       ${ case_county }
-      
-#  - Edit: 
-#      - trial_court_index
-#      - recompute:
-#        - trial_court
-#    button: |
-#      **County where you are filing your name change request:**
-#      ${ trial_court.address.county }
-#  - Edit: cook_district
-#    button: |
-#      **Cook County courthouse:**
-#      % if cook_district == "15":
-#      ${ "Daley Center, 50 W. Washington Street, Chicago" }
-#      % elif cook_district == "16":
-#      ${ "Second Municipal District, 5600 Old Orchard Road, Skokie" }
-#      % elif cook_district == "17":
-#      ${ "Third Municipal District, 2121 Euclid Avenue, Rolling Meadows" }
-#      % elif cook_district == "18":
-#      ${ "Fourth Municipal District, 1500 Maybrook Drive, Maywood" }
-#      % elif cook_district == "19":
-#      ${ "Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview" }
-#      % elif cook_district == "20":
-#      ${ "Sixth Municipal District, 16501 South Kedzie Parkway, Markham" }
-#      % endif      
-#    show if: trial_court_index == -1
+
   - Edit: request_impoundment
     button: |
       **Do you want to keep your name change court file private?**
@@ -3245,12 +3161,12 @@ review:
       - users[0].name.first
     button: |
       **Current legal name:**
-      ${ users[0].name.full(middle="full") }
+      ${ users[0].name_full() }
   - Edit: 
       - users[0].new.name.first
     button: |
       **New name:**
-      ${ users[0].new.name.full(middle="full") }
+      ${ users[0].new.name_full() }
   - Edit:
     - users[0].birthdate
     button: |
@@ -3427,13 +3343,13 @@ review:
       - users[1].name.first
     button: |
       **Spouse's current legal name:**
-      ${ users[1].name.full(middle="full") }
+      ${ users[1].name_full() }
     show if: change_spouse_name == 'Yes'
   - Edit: 
       - users[1].new.name.first
     button: |
       **Spouse's new name:**
-      ${ users[1].new.name.full(middle="full") }
+      ${ users[1].new.name_full() }
     show if: change_spouse_name == 'Yes'
   - Edit:
     - users[1].birthdate
@@ -3716,31 +3632,7 @@ review:
     button: |
       **County where you are filing your name change request:**
       ${ case_county }
-      
-#  - Edit: 
-#      - trial_court_index
-#      - recompute:
-#        - trial_court
-#    button: |
-#      **County where you are filing your name change request:**
-#      ${ trial_court.address.county }
-#  - Edit: cook_district
-#    button: |
-#      **Cook County courthouse:**
-#      % if cook_district == "15":
-#      ${ "Daley Center, 50 W. Washington Street, Chicago" }
-#      % elif cook_district == "16":
-#      ${ "Second Municipal District, 5600 Old Orchard Road, Skokie" }
-#      % elif cook_district == "17":
-#      ${ "Third Municipal District, 2121 Euclid Avenue, Rolling Meadows" }
-#      % elif cook_district == "18":
-#      ${ "Fourth Municipal District, 1500 Maybrook Drive, Maywood" }
-#      % elif cook_district == "19":
-#      ${ "Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview" }
-#      % elif cook_district == "20":
-#      ${ "Sixth Municipal District, 16501 South Kedzie Parkway, Markham" }
-#      % endif      
-#    show if: trial_court_index == -1
+
   - Edit: request_impoundment
     button: |
       **Do you want to keep your name change court file private?**
