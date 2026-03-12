@@ -306,7 +306,7 @@ question: |
 subquestion: |
   Answering **Yes** means that you have lived in Illinois for three months without taking a break to live in another state or country.
 
-  **Note:** If you plan to have lived in Illinois for three months by the time of your court hearing or when the name change order is entered, you can select **Yes**.
+  **Note:** If you will have lived in Illinois for three months by the time of your court hearing or when the name change order is entered, you can select **Yes**.
 fields:
   - no label: users[0].is_resident
     datatype: yesnoradio
@@ -326,7 +326,7 @@ question: |
 subquestion: |
   Answering **Yes** means that your spouse has lived in Illinois for three months without taking a break to live in another state or country.
 
-  **Note:** If your spouse plans to have lived in Illinois for three months by the time of their court hearing or when the name change order is entered, you can select **Yes**.
+  **Note:** If your spouse will have lived in Illinois for three months by the time of their court hearing or when the name change order is entered, you can select **Yes**.
   
 fields:
   - no label: users[1].is_resident
