@@ -58,8 +58,8 @@ code: |
     not_adult
   users[0].birthplace.city
   if users[0].is_resident == True:
-    if date_difference(starting=users[0].resident_date , ending=today() ).years < 0.25:
-      not_resident
+    if date_difference(starting=users[0].resident_date , ending=today() ).days < 90:
+      not_resident_warning
   else:
     not_resident
   
@@ -93,29 +93,28 @@ code: |
     else:
       users[1].birthplace.city
       if users[1].is_resident == True:
-        if date_difference(starting=users[1].resident_date , ending=today() ).years < 0.25:
-          spouse_not_resident_kickout
-          spouse_resident_check
+        if date_difference(starting=users[1].resident_date , ending=today() ).days < 90:
+          spouse_not_resident_warning
+
+        users[1].name.first
+        users[1].new.name.first
+        users[1].criminal_history_intro 
+        users[1].pending_arrests
+        users[1].pending_charges
+        users[1].misdemeanors
+        users[1].misdemeanors_outside_il
+        users[1].felonies
+        users[1].registry
+        if users[1].registry and users[1].registry_exceptions.all_false():
+          spouse_registry_kickout
+          spouse_registry_eligibility_check
         else:
-          users[1].name.first
-          users[1].new.name.first
-          users[1].criminal_history_intro 
-          users[1].pending_arrests
-          users[1].pending_charges
-          users[1].misdemeanors
-          users[1].misdemeanors_outside_il
-          users[1].felonies
-          users[1].registry
-          if users[1].registry and users[1].registry_exceptions.all_false():
-            spouse_registry_kickout
-            spouse_registry_eligibility_check
-          else:
-            if users[1].registry and users[1].registry_exceptions.any_true():
-              registry_notification
-            users[1].id_theft
-            if users[1].felonies or users[1].registry or users[1].id_theft:
-              users[1].conviction_intro
-          	  users[1].convictions.gather()  
+          if users[1].registry and users[1].registry_exceptions.any_true():
+            registry_notification
+          users[1].id_theft
+          if users[1].felonies or users[1].registry or users[1].id_theft:
+            users[1].conviction_intro
+        	  users[1].convictions.gather()  
       else:
         spouse_not_resident_kickout
         spouse_resident_check
@@ -306,6 +305,8 @@ question: |
   Have you lived in Illinois for the past three months?
 subquestion: |
   Answering **Yes** means that you have lived in Illinois for three months without taking a break to live in another state or country.
+
+  **Note:** If you plan to have lived in Illinois for three months by the time of your court hearing or when the name change order is entered, you can select **Yes**.
 fields:
   - no label: users[0].is_resident
     datatype: yesnoradio
@@ -324,6 +325,9 @@ question: |
   Has your spouse lived in Illinois for the past three months?
 subquestion: |
   Answering **Yes** means that your spouse has lived in Illinois for three months without taking a break to live in another state or country.
+
+  **Note:** If your spouse plans to have lived in Illinois for three months by the time of their court hearing or when the name change order is entered, you can select **Yes**.
+  
 fields:
   - no label: users[1].is_resident
     datatype: yesnoradio
@@ -353,7 +357,10 @@ event: not_resident
 question: |
   Sorry
 subquestion: |
-  This program is only for people who have lived in Illinois continuously for three months.
+  This program is only for people who:
+  
+  * Have lived in Illinois for three months, or
+  * Plan to have lived in Illinois for three months by the time their name change is granted.
 
   Click **Back** if you made a mistake. Or you can talk with a lawyer to discuss your options. 
 
@@ -362,22 +369,43 @@ buttons:
   - Exit: exit
   - Restart: restart
 ---
+id: not illinois resident 90 day warning
+continue button field: not_resident_warning
+question: |
+  Three month Illinois residency requirement
+subquestion: |
+  **Note:** To get a name change in Illinois, you must have lived in Illinois for three months at the time of your court hearing or when the name change order is entered.
+
+  It is less than 90 days since the date you said you started living in Illinois (${ users[0].resident_date  }). You can make and file your forms, but you may have to wait to meet the three month residency requirement before your name change is granted.
+---
 id: spouse not illinois resident
 continue button field: spouse_not_resident_kickout
 question: |
   Sorry
 subquestion: |
-  Your spouse must have lived in Illinois continuously for three months.
+  This program cannot make name change forms for your spouse. To be included on your name change forms, your spouse must:
   
-  This program cannot make name change forms for your spouse. You can talk with a lawyer to discuss your options. You can use the [**Legal Services Corporation website**](https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help) to find a legal aid organization in another state. Or you can use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
+  * Have lived in Illinois for three months, or
+  * Plan to have lived in Illinois for three months by the time their name change is granted.
+  
+   You can talk with a lawyer to discuss your options. You can use the [**Legal Services Corporation website**](https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help) to find a legal aid organization in another state. Or you can use **[Get Legal Help](https://www.illinoislegalaid.org/get-legal-help)** to find free or low-cost legal services in your area.
   
   Click **Back** if you made a mistake or click **Next** to make the forms for your name change.
+---
+id: spouse not illinois resident 90 day warning
+continue button field: spouse_not_resident_warning
+question: |
+  Three month Illinois residency requirement
+subquestion: |
+  **Note:** To get a name change in Illinois, your spouse must have lived in Illinois for three months at the time of their court hearing or when the name change order is entered.
+
+  It is less than 90 days since the date you said your spouse started living in Illinois (${ users[1].resident_date  }). You can make and file your forms, but your spouse may have to wait to meet the three month residency requirement by the time their name change is granted.
 ---
 depends on: 
   - users[1].is_resident
   - users[1].resident_date
 code: |
-  if change_spouse_name == "Yes" and (users[1].is_resident == False or date_difference(starting=users[1].resident_date , ending=today() ).years < 0.5):
+  if change_spouse_name == "Yes" and users[1].is_resident == False:
     change_spouse_name = "No"
   spouse_resident_check = True
 ---
@@ -1528,25 +1556,25 @@ fields:
 #    datatype: integer
 #    code: |
 #      court_county_lookup()
----
-code: |
-  def court_county_lookup(lowercase=False):
-    all_court_counties = court_list._load_courts()['address_county'].items()
-    filtered_courts = [(-1, "cook")] if lowercase else [(-1, "Cook")]
-    for court in all_court_counties:
-      if court[1] != "Cook":
-        court_name = court[1].lower() if lowercase else court[1]
-        filtered_courts.append((court[0],court_name))
-    return sorted( filtered_courts, key=lambda y: y[1])
----
-depends on:
-  - trial_court_index
-code: |
-  if trial_court_index == -1:
-    trial_court = court_list.as_court('trial_court', 15)
-    trial_court.address.county = "Cook"
-  else:
-    trial_court = court_list.as_court('trial_court', trial_court_index)
+#---
+#code: |
+#  def court_county_lookup(lowercase=False):
+#    all_court_counties = court_list._load_courts()['address_county'].items()
+#    filtered_courts = [(-1, "cook")] if lowercase else [(-1, "Cook")]
+#    for court in all_court_counties:
+#      if court[1] != "Cook":
+#        court_name = court[1].lower() if lowercase else court[1]
+#        filtered_courts.append((court[0],court_name))
+#    return sorted( filtered_courts, key=lambda y: y[1])
+#---
+#depends on:
+#  - trial_court_index
+#code: |
+#  if trial_court_index == -1:
+#    trial_court = court_list.as_court('trial_court', 15)
+#    trial_court.address.county = "Cook"
+#  else:
+#    trial_court = court_list.as_court('trial_court', trial_court_index)
 ---
 id: hide address
 question: |
@@ -1721,7 +1749,7 @@ subquestion: |
       <li>Everything on the forms is true and correct, or you have been informed or you believe it is true and correct, and</li>
       <li>You understand that making a false statement on the forms is perjury and has penalties provided by law.</li>
     </ul></p>
-    <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
+    <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Illinois Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
   </div>
 fields:
   - "Add e-signature?": e_signature
@@ -1745,7 +1773,7 @@ subquestion: |
       <li>Everything on the forms is true and correct, or they have been informed or they believe it is true and correct, and</li>
       <li>They understand that making a false statement on the forms is perjury and has penalties provided by law.</li>
     </ul></p>
-    <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
+    <p>See the <a href="https://www.ilga.gov/legislation/ilcs/documents/073500050k1-109.htm"><b>Illinois Code of Civil Procedure, 735 ILCS 5/1-109</b></a> for more information.</p>
   </div>
 fields:
   - "Add spouse's e-signature?": e_signature_spouse
@@ -1754,41 +1782,41 @@ terms:
   - "e-signature": |
       An e-signature is an electronic signature. It is a digital version of a signature that has the same effect as a hand-written signature. 
 ---
-depends on:
-  - trial_court_index
-  - cook_district
-code: |
-  if trial_court_index == -1:
-    trial_court = court_list.as_court('trial_court', cook_district)
-  else:
-    trial_court = court_list.as_court('trial_court', trial_court_index)
-    
-  court_name = str(trial_court.name)
-  court_street_address = str(trial_court.address.address)
-  court_city = str(trial_court.address.city)
-  court_state = str(trial_court.address.state)
-  court_zip = str(trial_court.address.zip)
-  courthouse_info = court_name + ", " + court_street_address + ", " + court_city + ", " + court_state + " " + court_zip
----
-id: Cook County district
-question: |
-  In which Cook County court will you file your name change?
-subquestion: |
-  ${ collapse_template(cook_district_help) }  
-field: cook_district
-choices:
-  - First Municipal District, Daley Center, 50 W. Washington Street, Chicago: 15
-  - Second Municipal District, 5600 Old Orchard Road, Skokie: 16
-  - Third Municipal District, 2121 Euclid Avenue, Rolling Meadows: 17
-  - Fourth Municipal District, 1500 Maybrook Drive, Maywood: 18
-  - Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview: 19
-  - Sixth Municipal District, 16501 South Kedzie Parkway, Markham: 20
----
-template: cook_district_help
-subject: |
-  **What if I am not sure?**
-content: |  
-  Visit **[Illinois Court Help](https://www.ilcourthelp.gov/)**, or you can call or text (833) 411-1121 for assistance.
+#depends on:
+#  - trial_court_index
+#  - cook_district
+#code: |
+#  if trial_court_index == -1:
+#    trial_court = court_list.as_court('trial_court', cook_district)
+#  else:
+#    trial_court = court_list.as_court('trial_court', trial_court_index)
+#    
+#  court_name = str(trial_court.name)
+#  court_street_address = str(trial_court.address.address)
+#  court_city = str(trial_court.address.city)
+#  court_state = str(trial_court.address.state)
+#  court_zip = str(trial_court.address.zip)
+#  courthouse_info = court_name + ", " + court_street_address + ", " + court_city + ", " + court_state + " " + court_zip
+#---
+#id: Cook County district
+#question: |
+#  In which Cook County court will you file your name change?
+#subquestion: |
+#  ${ collapse_template(cook_district_help) }  
+#field: cook_district
+#choices:
+#  - First Municipal District, Daley Center, 50 W. Washington Street, Chicago: 15
+#  - Second Municipal District, 5600 Old Orchard Road, Skokie: 16
+#  - Third Municipal District, 2121 Euclid Avenue, Rolling Meadows: 17
+#  - Fourth Municipal District, 1500 Maybrook Drive, Maywood: 18
+#  - Fifth Municipal District, 10220 S. 76th Avenue, Bridgeview: 19
+#  - Sixth Municipal District, 16501 South Kedzie Parkway, Markham: 20
+#---
+#template: cook_district_help
+#subject: |
+#  **What if I am not sure?**
+#content: |  
+#  Visit **[Illinois Court Help](https://www.ilcourthelp.gov/)**, or you can call or text (833) 411-1121 for assistance.
 ---
 id: Cook County district 1 additional requirement
 continue button field: district_1
@@ -3618,7 +3646,6 @@ review:
       **Notice and publication would be a hardship for my spouse because (optional):**
       ${ spouse_hardship_text }
     show if: change_spouse_name == 'Yes' and spouse_request_waiver == True
-
 ---
 id: filing details review screen
 section: Filing details
