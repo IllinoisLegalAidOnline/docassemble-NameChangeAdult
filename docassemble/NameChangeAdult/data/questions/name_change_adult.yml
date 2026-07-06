@@ -516,13 +516,13 @@ fields:
 ---
 id: name change after divorce
 question: |
-  Are you changing your name as a result of a divorce?
+  Are you changing your name back to a former or maiden name after a divorce?
 subquestion: |
-  If your divorce judgment gives you permission to return to using your former or maiden name, you do not need to file a separate name change request. The divorce judgment should work as an effective court order to change identification.
+  **Note:** You do not have to file a *Request for Name Change* if your name has been changed by a court order (for example, divorce judgment) or by a valid marriage certificate. Those documents should be effective to change identification.
 
-  You should be able to get a copy of your divorce judgment from the Circuit Clerk's office or website. For more information, see ILAO's article on [**How to get copies of your court records**](https://www.illinoislegalaid.org/node/33186).
+  If you need a copy of your divorce judgment, you should be able to get a copy from the Circuit Clerk's office or website. For more information, see ILAO's article on [**How to get copies of your court records**](https://www.illinoislegalaid.org/node/33186).
 fields:
-  - no label: users[0].after_divorce
+  - "Changing your name back to a former or maiden name after a divorce?": users[0].after_divorce
     datatype: yesnoradio
 ---
 id: divorce details
